@@ -8,7 +8,30 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { Badge } from './ui/badge'
 import { Textarea } from './ui/textarea'
 import { Separator } from './ui/separator'
-import { Edit, Save, Plus, Trash2, Download, Send, ArrowLeft } from 'lucide-react'
+import { Checkbox } from './ui/checkbox'
+import { Edit, Save, Plus, Trash2, Download, Send, ArrowLeft, RefreshCw, Binoculars } from 'lucide-react'
+
+// Reusable filter operator components
+const TextFilterOperators = () => (
+  <SelectContent>
+    <SelectItem value="equals">Equals</SelectItem>
+    <SelectItem value="notEquals">Does Not Equal</SelectItem>
+    <SelectItem value="contains">Contains</SelectItem>
+    <SelectItem value="startsWith">Starts With</SelectItem>
+    <SelectItem value="endsWith">Ends With</SelectItem>
+  </SelectContent>
+)
+
+const NumericFilterOperators = () => (
+  <SelectContent>
+    <SelectItem value="equals">Equals</SelectItem>
+    <SelectItem value="notEquals">Does Not Equal</SelectItem>
+    <SelectItem value="greaterThan">Greater Than</SelectItem>
+    <SelectItem value="greaterThanOrEqual">Greater Than or Equal</SelectItem>
+    <SelectItem value="lessThan">Less Than</SelectItem>
+    <SelectItem value="lessThanOrEqual">Less Than or Equal</SelectItem>
+  </SelectContent>
+)
 
 interface PurchaseOrderLine {
   id: string
@@ -121,6 +144,93 @@ export function PurchaseOrderDetail({ orderId }: PurchaseOrderDetailProps) {
   const [lines, setLines] = useState<PurchaseOrderLine[]>(mockPOLines)
   const [isEditing, setIsEditing] = useState(false)
   const [isAddingLine, setIsAddingLine] = useState(false)
+  const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set())
+  const [filters, setFilters] = useState({
+    itemCode: '',
+    description: '',
+    quantity: '',
+    unitPrice: '',
+    discount: '',
+    status: 'all'
+  })
+  const [filterOperators, setFilterOperators] = useState({
+    itemCode: 'contains',
+    description: 'contains',
+    quantity: 'equals',
+    unitPrice: 'equals',
+    discount: 'equals'
+  })
+
+  const applyFilter = (value: any, filterValue: string, operator: string) => {
+    if (!filterValue) return true
+    const val = value.toString().toLowerCase()
+    const filter = filterValue.toLowerCase()
+
+    switch (operator) {
+      case 'equals':
+        return val === filter
+      case 'notEquals':
+        return val !== filter
+      case 'contains':
+        return val.includes(filter)
+      case 'startsWith':
+        return val.startsWith(filter)
+      case 'endsWith':
+        return val.endsWith(filter)
+      case 'greaterThan':
+        return parseFloat(val) > parseFloat(filter)
+      case 'greaterThanOrEqual':
+        return parseFloat(val) >= parseFloat(filter)
+      case 'lessThan':
+        return parseFloat(val) < parseFloat(filter)
+      case 'lessThanOrEqual':
+        return parseFloat(val) <= parseFloat(filter)
+      default:
+        return true
+    }
+  }
+
+  const filteredLines = lines.filter(line => {
+    return (
+      applyFilter(line.itemCode, filters.itemCode, filterOperators.itemCode) &&
+      applyFilter(line.description, filters.description, filterOperators.description) &&
+      applyFilter(line.quantity, filters.quantity, filterOperators.quantity) &&
+      applyFilter(line.unitPrice, filters.unitPrice, filterOperators.unitPrice) &&
+      applyFilter(line.discount, filters.discount, filterOperators.discount) &&
+      (filters.status === 'all' || line.status.toLowerCase() === filters.status.toLowerCase())
+    )
+  })
+
+  const updateFilter = (key: string, value: string) => {
+    setFilters(prev => ({ ...prev, [key]: value }))
+  }
+
+  const updateOperator = (key: string, operator: string) => {
+    setFilterOperators(prev => ({ ...prev, [key]: operator }))
+  }
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedRows(new Set(filteredLines.map(line => line.id)))
+    } else {
+      setSelectedRows(new Set())
+    }
+  }
+
+  const handleSelectRow = (lineId: string, checked: boolean) => {
+    const newSelected = new Set(selectedRows)
+    if (checked) {
+      newSelected.add(lineId)
+    } else {
+      newSelected.delete(lineId)
+    }
+    setSelectedRows(newSelected)
+  }
+
+  const handleDeleteSelected = () => {
+    setLines(lines.filter(line => !selectedRows.has(line.id)))
+    setSelectedRows(new Set())
+  }
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -200,17 +310,6 @@ export function PurchaseOrderDetail({ orderId }: PurchaseOrderDetailProps) {
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to List
           </Button>
-          {!isEditing ? (
-            <Button onClick={() => setIsEditing(true)}>
-              <Edit className="w-4 h-4 mr-2" />
-              Edit
-            </Button>
-          ) : (
-            <Button onClick={handleSave}>
-              <Save className="w-4 h-4 mr-2" />
-              Save
-            </Button>
-          )}
           <Button variant="outline">
             <Download className="w-4 h-4 mr-2" />
             Print
@@ -231,6 +330,29 @@ export function PurchaseOrderDetail({ orderId }: PurchaseOrderDetailProps) {
               {header.status}
             </Badge>
           </div>
+          <div className="flex gap-2 mt-4">
+            <Button variant="outline" size="sm" onClick={handleAddLine}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDeleteSelected}
+              disabled={selectedRows.size === 0}
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Delete
+            </Button>
+            <Button variant="outline" size="sm">
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Refresh
+            </Button>
+            <Button variant="outline" size="sm">
+              <Binoculars className="w-4 h-4 mr-2" />
+              Binoculars
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -239,7 +361,6 @@ export function PurchaseOrderDetail({ orderId }: PurchaseOrderDetailProps) {
               <Input
                 value={header.id}
                 onChange={(e) => setHeader({...header, id: e.target.value})}
-                disabled
               />
             </div>
             <div className="space-y-2">
@@ -247,7 +368,6 @@ export function PurchaseOrderDetail({ orderId }: PurchaseOrderDetailProps) {
               <Input
                 value={header.vendor}
                 onChange={(e) => setHeader({...header, vendor: e.target.value})}
-                disabled={!isEditing}
               />
             </div>
             <div className="space-y-2">
@@ -256,7 +376,6 @@ export function PurchaseOrderDetail({ orderId }: PurchaseOrderDetailProps) {
                 type="date"
                 value={header.orderDate}
                 onChange={(e) => setHeader({...header, orderDate: e.target.value})}
-                disabled={!isEditing}
               />
             </div>
             <div className="space-y-2">
@@ -265,7 +384,6 @@ export function PurchaseOrderDetail({ orderId }: PurchaseOrderDetailProps) {
                 type="date"
                 value={header.expectedDate}
                 onChange={(e) => setHeader({...header, expectedDate: e.target.value})}
-                disabled={!isEditing}
               />
             </div>
             <div className="space-y-2">
@@ -301,7 +419,6 @@ export function PurchaseOrderDetail({ orderId }: PurchaseOrderDetailProps) {
               <Textarea
                 value={header.vendorAddress}
                 onChange={(e) => setHeader({...header, vendorAddress: e.target.value})}
-                disabled={!isEditing}
                 rows={2}
               />
             </div>
@@ -310,7 +427,6 @@ export function PurchaseOrderDetail({ orderId }: PurchaseOrderDetailProps) {
               <Textarea
                 value={header.notes}
                 onChange={(e) => setHeader({...header, notes: e.target.value})}
-                disabled={!isEditing}
                 rows={3}
               />
             </div>
@@ -321,14 +437,29 @@ export function PurchaseOrderDetail({ orderId }: PurchaseOrderDetailProps) {
       {/* Purchase Order Lines */}
       <Card>
         <CardHeader>
-          <div className="flex justify-between items-center">
-            <CardTitle>Purchase Order Lines</CardTitle>
-            {isEditing && (
-              <Button onClick={handleAddLine}>
-                <Plus className="w-4 h-4 mr-2" />
-                Add Line
-              </Button>
-            )}
+          <CardTitle>Purchase Order Lines</CardTitle>
+          <div className="flex gap-2 mt-4">
+            <Button variant="outline" size="sm" onClick={handleAddLine}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDeleteSelected}
+              disabled={selectedRows.size === 0}
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Delete
+            </Button>
+            <Button variant="outline" size="sm">
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Refresh
+            </Button>
+            <Button variant="outline" size="sm">
+              <Binoculars className="w-4 h-4 mr-2" />
+              Binoculars
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -336,20 +467,124 @@ export function PurchaseOrderDetail({ orderId }: PurchaseOrderDetailProps) {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Item Code</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Qty Ordered</TableHead>
-                  <TableHead>Unit Price</TableHead>
-                  <TableHead>Discount %</TableHead>
+                  <TableHead className="w-12">
+                    <Checkbox
+                      checked={filteredLines.length > 0 && selectedRows.size === filteredLines.length}
+                      onCheckedChange={handleSelectAll}
+                    />
+                  </TableHead>
+                  <TableHead>Mã hàng</TableHead>
+                  <TableHead>Mô tả</TableHead>
+                  <TableHead>Số lượng</TableHead>
+                  <TableHead>Đơn giá</TableHead>
+                  <TableHead>Chiết khấu (%)</TableHead>
                   <TableHead>Line Total</TableHead>
                   <TableHead>Qty Received</TableHead>
                   <TableHead>Status</TableHead>
-                  {isEditing && <TableHead>Actions</TableHead>}
+                </TableRow>
+                <TableRow>
+                  <TableHead className="py-2"></TableHead>
+                  <TableHead className="py-2">
+                    <div className="flex gap-1 items-center">
+                      <Select value={filterOperators.itemCode} onValueChange={(value) => updateOperator('itemCode', value)}>
+                        <SelectTrigger className="h-8 w-8 px-2 bg-white">
+                        </SelectTrigger>
+                        <TextFilterOperators />
+                      </Select>
+                      <Input
+                        placeholder=""
+                        value={filters.itemCode}
+                        onChange={(e) => updateFilter('itemCode', e.target.value)}
+                        className="h-8 flex-1"
+                      />
+                    </div>
+                  </TableHead>
+                  <TableHead className="py-2">
+                    <div className="flex gap-1 items-center">
+                      <Select value={filterOperators.description} onValueChange={(value) => updateOperator('description', value)}>
+                        <SelectTrigger className="h-8 w-8 px-2 bg-white">
+                        </SelectTrigger>
+                        <TextFilterOperators />
+                      </Select>
+                      <Input
+                        placeholder=""
+                        value={filters.description}
+                        onChange={(e) => updateFilter('description', e.target.value)}
+                        className="h-8 flex-1"
+                      />
+                    </div>
+                  </TableHead>
+                  <TableHead className="py-2">
+                    <div className="flex gap-1 items-center">
+                      <Select value={filterOperators.quantity} onValueChange={(value) => updateOperator('quantity', value)}>
+                        <SelectTrigger className="h-8 w-8 px-2 bg-white">
+                        </SelectTrigger>
+                        <NumericFilterOperators />
+                      </Select>
+                      <Input
+                        placeholder=""
+                        value={filters.quantity}
+                        onChange={(e) => updateFilter('quantity', e.target.value)}
+                        className="h-8 flex-1"
+                      />
+                    </div>
+                  </TableHead>
+                  <TableHead className="py-2">
+                    <div className="flex gap-1 items-center">
+                      <Select value={filterOperators.unitPrice} onValueChange={(value) => updateOperator('unitPrice', value)}>
+                        <SelectTrigger className="h-8 w-8 px-2 bg-white">
+                        </SelectTrigger>
+                        <NumericFilterOperators />
+                      </Select>
+                      <Input
+                        placeholder=""
+                        value={filters.unitPrice}
+                        onChange={(e) => updateFilter('unitPrice', e.target.value)}
+                        className="h-8 flex-1"
+                      />
+                    </div>
+                  </TableHead>
+                  <TableHead className="py-2">
+                    <div className="flex gap-1 items-center">
+                      <Select value={filterOperators.discount} onValueChange={(value) => updateOperator('discount', value)}>
+                        <SelectTrigger className="h-8 w-8 px-2 bg-white">
+                        </SelectTrigger>
+                        <NumericFilterOperators />
+                      </Select>
+                      <Input
+                        placeholder=""
+                        value={filters.discount}
+                        onChange={(e) => updateFilter('discount', e.target.value)}
+                        className="h-8 flex-1"
+                      />
+                    </div>
+                  </TableHead>
+                  <TableHead className="py-2"></TableHead>
+                  <TableHead className="py-2"></TableHead>
+                  <TableHead className="py-2">
+                    <Select value={filters.status} onValueChange={(value) => updateFilter('status', value)}>
+                      <SelectTrigger className="h-8 bg-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All</SelectItem>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="partial">Partial</SelectItem>
+                        <SelectItem value="received">Received</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {lines.map((line) => (
+                {filteredLines.map((line) => (
                   <TableRow key={line.id}>
+                    <TableCell>
+                      <Checkbox
+                        checked={selectedRows.has(line.id)}
+                        onCheckedChange={(checked) => handleSelectRow(line.id, checked as boolean)}
+                      />
+                    </TableCell>
                     <TableCell>
                       <Input
                         value={line.itemCode}
@@ -405,17 +640,6 @@ export function PurchaseOrderDetail({ orderId }: PurchaseOrderDetailProps) {
                         {line.status.charAt(0).toUpperCase() + line.status.slice(1)}
                       </Badge>
                     </TableCell>
-                    {isEditing && (
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeleteLine(line.id)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </TableCell>
-                    )}
                   </TableRow>
                 ))}
               </TableBody>

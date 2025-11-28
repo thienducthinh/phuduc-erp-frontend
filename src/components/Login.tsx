@@ -96,29 +96,29 @@ export function Login({ onLogin }: LoginProps) {
           <div className="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-blue-100">
             <Building2 className="h-6 w-6 text-blue-600" />
           </div>
-          <h2 className="mt-6 text-3xl">Infor Baan LN ERP</h2>
+          <h2 className="mt-6 text-3xl">Phú Đức ERP</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Sign in to your account to continue
+            Đăng nhập vào tài khoản của bạn để tiếp tục
           </p>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>Sign In</CardTitle>
+            <CardTitle>Đăng nhập</CardTitle>
             <CardDescription>
-              Enter your credentials to access the ERP system
+              Vui lòng nhập thông tin đăng nhập của bạn bên dưới
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="username">Username</Label>
+                <Label htmlFor="username">Tên đăng nhập</Label>
                 <div className="relative">
                   <UserIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="username"
                     type="text"
-                    placeholder="Enter your username"
+                    placeholder="Nhập tên đăng nhập của bạn"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     className="pl-10"
@@ -128,13 +128,13 @@ export function Login({ onLogin }: LoginProps) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">Mật khẩu</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="password"
                     type="password"
-                    placeholder="Enter your password"
+                    placeholder="Nhập mật khẩu của bạn"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="pl-10"
@@ -156,7 +156,7 @@ export function Login({ onLogin }: LoginProps) {
                 className="w-full" 
                 disabled={isLoading}
               >
-                {isLoading ? 'Signing in...' : 'Sign In'}
+                {isLoading ? 'Đang đăng nhập...' : 'Đăng nhập'}
               </Button>
             </form>
 

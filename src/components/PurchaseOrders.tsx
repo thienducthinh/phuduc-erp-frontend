@@ -1,14 +1,12 @@
 import { useState } from 'react'
-import { Card, CardContent, CardHeader } from './ui/card'
+import { Card, CardContent } from './ui/card'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table'
 import { Badge } from './ui/badge'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog'
-import { Label } from './ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
-import { Textarea } from './ui/textarea'
-import { Plus, Search, Eye, Edit, Download } from 'lucide-react'
+import { Checkbox } from './ui/checkbox'
+import { Plus, ArrowRight, Trash2, Save, RefreshCw, Binoculars, Filter } from 'lucide-react'
 
 interface PurchaseOrder {
   id: string
@@ -64,39 +62,69 @@ interface PurchaseOrdersProps {
 }
 
 export function PurchaseOrders({ onOpenDetail }: PurchaseOrdersProps) {
-  const [searchTerm, setSearchTerm] = useState('')
-  const [statusFilter, setStatusFilter] = useState('all')
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>(mockPurchaseOrders)
-  const [newOrder, setNewOrder] = useState({
+  const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set())
+  const [filters, setFilters] = useState({
+    id: '',
     vendor: '',
+    orderDate: '',
     expectedDate: '',
-    notes: ''
+    status: 'all',
+    items: '',
+    total: ''
   })
+  const [filterOperators, setFilterOperators] = useState({
+    id: 'contains',
+    vendor: 'contains',
+    items: 'equals',
+    total: 'equals'
+  })
+
+  const applyFilter = (value: any, filterValue: string, operator: string) => {
+    if (!filterValue) return true
+    const val = value.toString().toLowerCase()
+    const filter = filterValue.toLowerCase()
+
+    switch (operator) {
+      case 'equals':
+        return val === filter
+      case 'notEquals':
+        return val !== filter
+      case 'contains':
+        return val.includes(filter)
+      case 'startsWith':
+        return val.startsWith(filter)
+      case 'endsWith':
+        return val.endsWith(filter)
+      case 'greaterThan':
+        return parseFloat(val) > parseFloat(filter)
+      case 'greaterThanOrEqual':
+        return parseFloat(val) >= parseFloat(filter)
+      case 'lessThan':
+        return parseFloat(val) < parseFloat(filter)
+      case 'lessThanOrEqual':
+        return parseFloat(val) <= parseFloat(filter)
+      default:
+        return true
+    }
+  }
 
   const filteredOrders = purchaseOrders.filter(order => {
-    const matchesSearch = order.vendor.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         order.id.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesStatus = statusFilter === 'all' || order.status.toLowerCase() === statusFilter
-    return matchesSearch && matchesStatus
+    return (
+      applyFilter(order.id, filters.id, filterOperators.id) &&
+      applyFilter(order.vendor, filters.vendor, filterOperators.vendor) &&
+      (filters.status === 'all' || order.status.toLowerCase() === filters.status.toLowerCase()) &&
+      applyFilter(order.items, filters.items, filterOperators.items) &&
+      applyFilter(order.total, filters.total, filterOperators.total)
+    )
   })
 
-  const handleCreateOrder = () => {
-    if (!newOrder.vendor || !newOrder.expectedDate) return
+  const updateFilter = (key: string, value: string) => {
+    setFilters(prev => ({ ...prev, [key]: value }))
+  }
 
-    const newPO: PurchaseOrder = {
-      id: `PO-${String(purchaseOrders.length + 1).padStart(3, '0')}`,
-      vendor: newOrder.vendor,
-      orderDate: new Date().toISOString().split('T')[0],
-      expectedDate: newOrder.expectedDate,
-      status: 'Draft',
-      total: Math.floor(Math.random() * 50000) + 5000,
-      items: Math.floor(Math.random() * 20) + 1
-    }
-
-    setPurchaseOrders([...purchaseOrders, newPO])
-    setNewOrder({ vendor: '', expectedDate: '', notes: '' })
-    setIsCreateDialogOpen(false)
+  const updateOperator = (key: string, operator: string) => {
+    setFilterOperators(prev => ({ ...prev, [key]: operator }))
   }
 
   const handleStatusChange = (orderId: string, newStatus: PurchaseOrder['status']) => {
@@ -116,117 +144,211 @@ export function PurchaseOrders({ onOpenDetail }: PurchaseOrdersProps) {
     }
   }
 
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedRows(new Set(filteredOrders.map(order => order.id)))
+    } else {
+      setSelectedRows(new Set())
+    }
+  }
+
+  const handleSelectRow = (orderId: string, checked: boolean) => {
+    const newSelected = new Set(selectedRows)
+    if (checked) {
+      newSelected.add(orderId)
+    } else {
+      newSelected.delete(orderId)
+    }
+    setSelectedRows(newSelected)
+  }
+
+  const handleDelete = () => {
+    setPurchaseOrders(purchaseOrders.filter(order => !selectedRows.has(order.id)))
+    setSelectedRows(new Set())
+  }
+
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl mb-2">Purchase Orders</h2>
-          <p className="text-muted-foreground">Manage your purchase orders and vendor relationships</p>
+      <div>
+        <h2 className="text-2xl mb-4">Purchase Orders</h2>
+        <div className="flex gap-2 mb-4">
+          <Button variant="outline" size="sm">
+            <Plus className="w-4 h-4 mr-2" />
+            Add
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleDelete}
+            disabled={selectedRows.size === 0}
+          >
+            <Trash2 className="w-4 h-4 mr-2" />
+            Delete
+          </Button>
+          <Button variant="outline" size="sm">
+            <Save className="w-4 h-4 mr-2" />
+            Save
+          </Button>
+          <Button variant="outline" size="sm">
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Refresh
+          </Button>
+          <Button variant="outline" size="sm">
+            <Binoculars className="w-4 h-4 mr-2" />
+            Binoculars
+          </Button>
         </div>
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
-              New Purchase Order
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Create Purchase Order</DialogTitle>
-              <DialogDescription>
-                Create a new purchase order for your vendor
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="vendor">Vendor</Label>
-                <Select value={newOrder.vendor} onValueChange={(value) => setNewOrder({...newOrder, vendor: value})}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select vendor" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Tech Supplies Inc">Tech Supplies Inc</SelectItem>
-                    <SelectItem value="Global Electronics">Global Electronics</SelectItem>
-                    <SelectItem value="Office Depot Pro">Office Depot Pro</SelectItem>
-                    <SelectItem value="Industrial Parts Co">Industrial Parts Co</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="expected-date">Expected Delivery</Label>
-                <Input 
-                  type="date" 
-                  value={newOrder.expectedDate}
-                  onChange={(e) => setNewOrder({...newOrder, expectedDate: e.target.value})}
-                />
-              </div>
-              <div className="space-y-2 col-span-2">
-                <Label htmlFor="notes">Notes</Label>
-                <Textarea 
-                  placeholder="Additional notes for this purchase order..."
-                  value={newOrder.notes}
-                  onChange={(e) => setNewOrder({...newOrder, notes: e.target.value})}
-                />
-              </div>
-            </div>
-            <div className="flex justify-end space-x-2 pt-4">
-              <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleCreateOrder} disabled={!newOrder.vendor || !newOrder.expectedDate}>
-                Create Order
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
       </div>
 
       <Card>
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row gap-4 justify-between">
-            <div className="flex gap-2">
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search by vendor or PO number..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 w-80"
-                />
-              </div>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-40">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="draft">Draft</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="approved">Approved</SelectItem>
-                  <SelectItem value="received">Received</SelectItem>
-                  <SelectItem value="cancelled">Cancelled</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>PO Number</TableHead>
+                <TableHead className="w-12">
+                  <Checkbox
+                    checked={filteredOrders.length > 0 && selectedRows.size === filteredOrders.length}
+                    onCheckedChange={handleSelectAll}
+                  />
+                </TableHead>
+                <TableHead className="w-8"></TableHead>
+                <TableHead>Mã Đơn hàng</TableHead>
                 <TableHead>Vendor</TableHead>
                 <TableHead>Order Date</TableHead>
                 <TableHead>Expected Date</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Items</TableHead>
                 <TableHead>Total</TableHead>
-                <TableHead>Actions</TableHead>
+              </TableRow>
+              <TableRow>
+                <TableHead className="py-2"></TableHead>
+                <TableHead className="py-2"></TableHead>
+                <TableHead className="py-2">
+                  <div className="flex gap-1 items-center">
+                    <Select value={filterOperators.id} onValueChange={(value) => updateOperator('id', value)}>
+                      <SelectTrigger className="h-8 w-8 px-2">
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="equals">Equals</SelectItem>
+                        <SelectItem value="notEquals">Does Not Equal</SelectItem>
+                        <SelectItem value="contains">Contains</SelectItem>
+                        <SelectItem value="startsWith">Starts With</SelectItem>
+                        <SelectItem value="endsWith">Ends With</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      placeholder=""
+                      value={filters.id}
+                      onChange={(e) => updateFilter('id', e.target.value)}
+                      className="h-8 flex-1"
+                    />
+                  </div>
+                </TableHead>
+                <TableHead className="py-2">
+                  <div className="flex gap-1 items-center">
+                    <Select value={filterOperators.vendor} onValueChange={(value) => updateOperator('vendor', value)}>
+                      <SelectTrigger className="h-8 w-8 px-2">
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="equals">Equals</SelectItem>
+                        <SelectItem value="notEquals">Does Not Equal</SelectItem>
+                        <SelectItem value="contains">Contains</SelectItem>
+                        <SelectItem value="startsWith">Starts With</SelectItem>
+                        <SelectItem value="endsWith">Ends With</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      placeholder=""
+                      value={filters.vendor}
+                      onChange={(e) => updateFilter('vendor', e.target.value)}
+                      className="h-8 flex-1"
+                    />
+                  </div>
+                </TableHead>
+                <TableHead className="py-2"></TableHead>
+                <TableHead className="py-2"></TableHead>
+                <TableHead className="py-2">
+                  <Select value={filters.status} onValueChange={(value) => updateFilter('status', value)}>
+                    <SelectTrigger className="h-8">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All</SelectItem>
+                      <SelectItem value="draft">Draft</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="approved">Approved</SelectItem>
+                      <SelectItem value="received">Received</SelectItem>
+                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </TableHead>
+                <TableHead className="py-2">
+                  <div className="flex gap-1 items-center">
+                    <Select value={filterOperators.items} onValueChange={(value) => updateOperator('items', value)}>
+                      <SelectTrigger className="h-8 w-8 px-2">
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="equals">Equals</SelectItem>
+                        <SelectItem value="notEquals">Does Not Equal</SelectItem>
+                        <SelectItem value="greaterThan">Greater Than</SelectItem>
+                        <SelectItem value="greaterThanOrEqual">Greater Than or Equal</SelectItem>
+                        <SelectItem value="lessThan">Less Than</SelectItem>
+                        <SelectItem value="lessThanOrEqual">Less Than or Equal</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      placeholder=""
+                      value={filters.items}
+                      onChange={(e) => updateFilter('items', e.target.value)}
+                      className="h-8 flex-1"
+                    />
+                  </div>
+                </TableHead>
+                <TableHead className="py-2">
+                  <div className="flex gap-1 items-center">
+                    <Select value={filterOperators.total} onValueChange={(value) => updateOperator('total', value)}>
+                      <SelectTrigger className="h-8 w-8 px-2">
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="equals">Equals</SelectItem>
+                        <SelectItem value="notEquals">Does Not Equal</SelectItem>
+                        <SelectItem value="greaterThan">Greater Than</SelectItem>
+                        <SelectItem value="greaterThanOrEqual">Greater Than or Equal</SelectItem>
+                        <SelectItem value="lessThan">Less Than</SelectItem>
+                        <SelectItem value="lessThanOrEqual">Less Than or Equal</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      placeholder=""
+                      value={filters.total}
+                      onChange={(e) => updateFilter('total', e.target.value)}
+                      className="h-8 flex-1"
+                    />
+                  </div>
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredOrders.map((order) => (
                 <TableRow key={order.id}>
+                  <TableCell>
+                    <Checkbox
+                      checked={selectedRows.has(order.id)}
+                      onCheckedChange={(checked) => handleSelectRow(order.id, checked as boolean)}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex space-x-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        title="View Details"
+                        onClick={() => onOpenDetail(order.id)}
+                      >
+                        <ArrowRight className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
                   <TableCell className="font-medium">{order.id}</TableCell>
                   <TableCell>{order.vendor}</TableCell>
                   <TableCell>{new Date(order.orderDate).toLocaleDateString()}</TableCell>
@@ -238,36 +360,7 @@ export function PurchaseOrders({ onOpenDetail }: PurchaseOrdersProps) {
                   </TableCell>
                   <TableCell>{order.items}</TableCell>
                   <TableCell>${order.total.toLocaleString()}</TableCell>
-                  <TableCell>
-                    <div className="flex space-x-2">
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        title="View Details"
-                        onClick={() => onOpenDetail(order.id)}
-                      >
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        title="Change Status"
-                        onClick={() => {
-                          const nextStatus = 
-                            order.status === 'Draft' ? 'Pending' :
-                            order.status === 'Pending' ? 'Approved' :
-                            order.status === 'Approved' ? 'Received' : 'Received'
-                          handleStatusChange(order.id, nextStatus)
-                        }}
-                        disabled={order.status === 'Received' || order.status === 'Cancelled'}
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm" title="Download">
-                        <Download className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
+                  
                 </TableRow>
               ))}
             </TableBody>

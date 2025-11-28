@@ -32,34 +32,34 @@ const navigationItems = [
   },
   {
     id: 'purchase-orders',
-    label: 'Purchase Orders',
+    label: 'Mua hàng',
     icon: ShoppingCart,
     subItems: [
       {
         id: 'purchase-orders-list',
-        label: 'Purchase Orders',
+        label: 'Đơn mua hàng',
         component: 'purchase-orders' as const
       },
       {
         id: 'purchase-order-new',
-        label: 'Purchase Order',
+        label: 'Đơn mua hàng chi tiết',
         component: 'purchase-order' as const
       }
     ]
   },
   {
     id: 'sales-orders',
-    label: 'Sales Orders',
+    label: 'Bán hàng',
     icon: TrendingUp,
     subItems: [
       {
         id: 'sales-orders-list',
-        label: 'Sales Orders',
+        label: 'Đơn bán hàng',
         component: 'sales-orders' as const
       },
       {
         id: 'sales-order-new',
-        label: 'Sales Order',
+        label: 'Đơn bán hàng chi tiết',
         component: 'sales-order' as const
       }
     ]
@@ -171,24 +171,23 @@ export default function App() {
 
     // Handle sub-items that pass component directly
     if (component) {
-      // For purchase-order and sales-order, allow multiple tabs (don't check for existing)
-      if (component === 'purchase-order' || component === 'sales-order') {
-        const newTab: Tab = {
-          id: `tab-${tabIdCounter++}`,
-          title: component === 'purchase-order' ? 'New Purchase Order' : 'New Sales Order',
-          component: component as any,
-          icon: icon || (component === 'purchase-order' ? ShoppingCart : TrendingUp),
-          closable: true,
-          orderId: 'new' // Indicate this is a new order
-        }
+      // Determine title and orderId based on component type
+      let title = label || ''
+      let orderId: string | undefined = undefined
 
-        setTabs([...tabs, newTab])
-        setActiveTabId(newTab.id)
-        return
+      if (component === 'purchase-order' || component === 'sales-order') {
+        title = component === 'purchase-order' ? 'New Purchase Order' : 'New Sales Order'
+        orderId = 'new'
       }
 
-      // For other components, check if tab already exists
-      const existingTab = tabs.find(tab => tab.component === component)
+      // Check if tab already exists
+      const existingTab = tabs.find(tab => {
+        if (orderId) {
+          return tab.component === component && tab.orderId === orderId
+        }
+        return tab.component === component
+      })
+
       if (existingTab) {
         setActiveTabId(existingTab.id)
         return
@@ -196,10 +195,11 @@ export default function App() {
 
       const newTab: Tab = {
         id: `tab-${tabIdCounter++}`,
-        title: label || '',
+        title,
         component: component as any,
-        icon: icon || Package,
-        closable: true
+        icon: icon || (component === 'purchase-order' ? ShoppingCart : component === 'sales-order' ? TrendingUp : Package),
+        closable: true,
+        ...(orderId && { orderId })
       }
 
       setTabs([...tabs, newTab])
@@ -300,7 +300,7 @@ export default function App() {
           <SidebarHeader className="border-b px-6 py-4">
             <div className="flex items-center gap-3">
               <Building2 className="w-6 h-6 text-blue-600" />
-              <h2 className="text-lg">Infor Baan LN ERP</h2>
+              <h2 className="text-lg">Phú Đức</h2>
             </div>
           </SidebarHeader>
           <SidebarContent>
