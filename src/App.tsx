@@ -1,0 +1,408 @@
+import { useState, useEffect } from 'react'
+import './styles/globals.css'
+import { Button } from './components/ui/button'
+import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarInset } from './components/ui/sidebar'
+import { Login } from './components/Login'
+import { Dashboard } from './components/Dashboard'
+import { PurchaseOrders } from './components/PurchaseOrders'
+import { SalesOrders } from './components/SalesOrders'
+import { Inventory } from './components/Inventory'
+import { AccessDistribution } from './components/AccessDistribution'
+import { PurchaseOrderDetail } from './components/PurchaseOrderDetail'
+import { SalesOrderDetail } from './components/SalesOrderDetail'
+import { TabManager, Tab } from './components/TabManager'
+import { User as UserIcon, LogOut, Building2, BarChart3, ShoppingCart, TrendingUp, Package, Users, ChevronDown, ChevronRight } from 'lucide-react'
+
+interface User {
+  id: string
+  username: string
+  role: 'admin' | 'user'
+  name: string
+  department: string
+}
+
+let tabIdCounter = 1
+
+const navigationItems = [
+  {
+    id: 'dashboard',
+    label: 'Dashboard',
+    icon: BarChart3,
+    component: 'dashboard' as const
+  },
+  {
+    id: 'purchase-orders',
+    label: 'Purchase Orders',
+    icon: ShoppingCart,
+    subItems: [
+      {
+        id: 'purchase-orders-list',
+        label: 'Purchase Orders',
+        component: 'purchase-orders' as const
+      },
+      {
+        id: 'purchase-order-new',
+        label: 'Purchase Order',
+        component: 'purchase-order' as const
+      }
+    ]
+  },
+  {
+    id: 'sales-orders',
+    label: 'Sales Orders',
+    icon: TrendingUp,
+    subItems: [
+      {
+        id: 'sales-orders-list',
+        label: 'Sales Orders',
+        component: 'sales-orders' as const
+      },
+      {
+        id: 'sales-order-new',
+        label: 'Sales Order',
+        component: 'sales-order' as const
+      }
+    ]
+  },
+  {
+    id: 'inventory',
+    label: 'Inventory',
+    icon: Package,
+    subItems: [
+      {
+        id: 'inventory-on-hand',
+        label: 'Inventory On Hand',
+        component: 'inventory-on-hand' as const
+      },
+      {
+        id: 'inventory-transactions',
+        label: 'Transactions',
+        component: 'inventory-transactions' as const
+      },
+      {
+        id: 'inventory-adjustment',
+        label: 'Adjustment',
+        component: 'inventory-adjustment' as const
+      }
+    ]
+  }
+]
+
+export default function App() {
+  const [user, setUser] = useState<User | null>(null)
+  const [tabs, setTabs] = useState<Tab[]>([])
+  const [activeTabId, setActiveTabId] = useState<string>('')
+  const [openMenus, setOpenMenus] = useState<Set<string>>(new Set())
+
+  useEffect(() => {
+    // Initialize with dashboard tab when user logs in
+    if (user && tabs.length === 0) {
+      const dashboardTab: Tab = {
+        id: `tab-${tabIdCounter++}`,
+        title: 'Dashboard',
+        component: 'dashboard',
+        icon: BarChart3,
+        closable: false
+      }
+      setTabs([dashboardTab])
+      setActiveTabId(dashboardTab.id)
+    }
+  }, [user, tabs.length])
+
+  const handleLogin = (loggedInUser: User) => {
+    setUser(loggedInUser)
+  }
+
+  const handleLogout = () => {
+    setUser(null)
+    setTabs([])
+    setActiveTabId('')
+  }
+
+  const handleTabChange = (tabId: string) => {
+    setActiveTabId(tabId)
+  }
+
+  const handleTabClose = (tabId: string) => {
+    const newTabs = tabs.filter(tab => tab.id !== tabId)
+    setTabs(newTabs)
+
+    if (activeTabId === tabId && newTabs.length > 0) {
+      const firstTab = newTabs[0]
+      if (firstTab) {
+        setActiveTabId(firstTab.id)
+      }
+    }
+  }
+
+  const toggleMenu = (menuId: string) => {
+    setOpenMenus(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(menuId)) {
+        newSet.delete(menuId)
+      } else {
+        newSet.add(menuId)
+      }
+      return newSet
+    })
+  }
+
+  const handleMenuClick = (itemId: string, component?: string, label?: string, icon?: any) => {
+    if (itemId === 'access-distribution') {
+      // Check if tab already exists
+      const existingTab = tabs.find(tab => tab.component === 'access-distribution')
+      if (existingTab) {
+        setActiveTabId(existingTab.id)
+        return
+      }
+
+      const newTab: Tab = {
+        id: `tab-${tabIdCounter++}`,
+        title: 'Access Distribution',
+        component: 'access-distribution',
+        icon: Users,
+        closable: true
+      }
+
+      setTabs([...tabs, newTab])
+      setActiveTabId(newTab.id)
+      return
+    }
+
+    // Handle sub-items that pass component directly
+    if (component) {
+      // For purchase-order and sales-order, allow multiple tabs (don't check for existing)
+      if (component === 'purchase-order' || component === 'sales-order') {
+        const newTab: Tab = {
+          id: `tab-${tabIdCounter++}`,
+          title: component === 'purchase-order' ? 'New Purchase Order' : 'New Sales Order',
+          component: component as any,
+          icon: icon || (component === 'purchase-order' ? ShoppingCart : TrendingUp),
+          closable: true,
+          orderId: 'new' // Indicate this is a new order
+        }
+
+        setTabs([...tabs, newTab])
+        setActiveTabId(newTab.id)
+        return
+      }
+
+      // For other components, check if tab already exists
+      const existingTab = tabs.find(tab => tab.component === component)
+      if (existingTab) {
+        setActiveTabId(existingTab.id)
+        return
+      }
+
+      const newTab: Tab = {
+        id: `tab-${tabIdCounter++}`,
+        title: label || '',
+        component: component as any,
+        icon: icon || Package,
+        closable: true
+      }
+
+      setTabs([...tabs, newTab])
+      setActiveTabId(newTab.id)
+      return
+    }
+
+    const item = navigationItems.find(nav => nav.id === itemId)
+    if (!item) return
+
+    // If item has sub-items, toggle the dropdown instead of opening a tab
+    if (item.subItems) {
+      toggleMenu(itemId)
+      return
+    }
+
+    // Check if tab already exists
+    const existingTab = tabs.find(tab => tab.component === item.component)
+    if (existingTab) {
+      setActiveTabId(existingTab.id)
+      return
+    }
+
+    const newTab: Tab = {
+      id: `tab-${tabIdCounter++}`,
+      title: item.label,
+      component: item.component,
+      icon: item.icon,
+      closable: item.id !== 'dashboard'
+    }
+
+    setTabs([...tabs, newTab])
+    setActiveTabId(newTab.id)
+  }
+
+  const handleOpenDetailTab = (type: 'purchase-order' | 'sales-order', orderId: string) => {
+    const title = type === 'purchase-order' ? `Purchase Order ${orderId}` : `Sales Order ${orderId}`
+    
+    // Check if tab already exists
+    const existingTab = tabs.find(tab => tab.component === type && tab.title === title)
+    if (existingTab) {
+      setActiveTabId(existingTab.id)
+      return
+    }
+
+    const newTab: Tab = {
+      id: `tab-${tabIdCounter++}`,
+      title,
+      component: type,
+      icon: type === 'purchase-order' ? ShoppingCart : TrendingUp,
+      closable: true,
+      orderId
+    }
+
+    setTabs([...tabs, newTab])
+    setActiveTabId(newTab.id)
+  }
+
+  const renderTabContent = () => {
+    const activeTab = tabs.find(tab => tab.id === activeTabId)
+    if (!activeTab) return null
+
+    switch (activeTab.component) {
+      case 'dashboard':
+        return <Dashboard />
+      case 'purchase-orders':
+        return <PurchaseOrders onOpenDetail={(orderId) => handleOpenDetailTab('purchase-order', orderId)} />
+      case 'sales-orders':
+        return <SalesOrders onOpenDetail={(orderId) => handleOpenDetailTab('sales-order', orderId)} />
+      case 'inventory':
+        return <Inventory />
+      case 'inventory-on-hand':
+        return <Inventory />
+      case 'inventory-transactions':
+        return <Inventory />
+      case 'inventory-adjustment':
+        return <Inventory />
+      case 'access-distribution':
+        return <AccessDistribution />
+      case 'purchase-order':
+        return <PurchaseOrderDetail orderId={activeTab.orderId!} />
+      case 'sales-order':
+        return <SalesOrderDetail orderId={activeTab.orderId!} />
+      default:
+        return <Dashboard />
+    }
+  }
+
+  if (!user) {
+    return <Login onLogin={handleLogin} />
+  }
+
+  return (
+    <SidebarProvider>
+      <div className="flex min-h-screen w-full">
+        {/* Sidebar */}
+        <Sidebar collapsible="none">
+          <SidebarHeader className="border-b px-6 py-4">
+            <div className="flex items-center gap-3">
+              <Building2 className="w-6 h-6 text-blue-600" />
+              <h2 className="text-lg">Infor Baan LN ERP</h2>
+            </div>
+          </SidebarHeader>
+          <SidebarContent>
+            <SidebarMenu className="px-4 py-2">
+              {navigationItems.map((item) => (
+                <SidebarMenuItem key={item.id}>
+                  {item.subItems ? (
+                    <>
+                      <SidebarMenuButton
+                        onClick={() => handleMenuClick(item.id)}
+                        className="w-full justify-between"
+                      >
+                        <div className="flex items-center gap-2">
+                          <item.icon className="w-4 h-4" />
+                          <span>{item.label}</span>
+                        </div>
+                        {openMenus.has(item.id) ? (
+                          <ChevronDown className="w-4 h-4" />
+                        ) : (
+                          <ChevronRight className="w-4 h-4" />
+                        )}
+                      </SidebarMenuButton>
+                      {openMenus.has(item.id) && (
+                        <div className="ml-6 mt-1 space-y-1">
+                          {item.subItems.map((subItem) => (
+                            <SidebarMenuButton
+                              key={subItem.id}
+                              onClick={() => handleMenuClick(subItem.id, subItem.component, subItem.label, item.icon)}
+                              className="w-full text-sm"
+                            >
+                              <span>{subItem.label}</span>
+                            </SidebarMenuButton>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <SidebarMenuButton
+                      onClick={() => handleMenuClick(item.id)}
+                      className="w-full"
+                    >
+                      <item.icon className="w-4 h-4" />
+                      <span>{item.label}</span>
+                    </SidebarMenuButton>
+                  )}
+                </SidebarMenuItem>
+              ))}
+              {user?.role === 'admin' && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    onClick={() => handleMenuClick('access-distribution')}
+                    className="w-full"
+                  >
+                    <Users className="w-4 h-4" />
+                    <span>Access Distribution</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
+            </SidebarMenu>
+          </SidebarContent>
+        </Sidebar>
+
+        {/* Main Content */}
+        <SidebarInset>
+          <div className="flex flex-col h-full">
+            {/* Header */}
+            <header className="flex items-center justify-between px-6 py-3 bg-blue-600 text-white border-b">
+              <div className="flex items-center gap-4">
+                <h1 className="text-lg">ERP System</h1>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 text-sm">
+                  <UserIcon className="w-4 h-4" />
+                  <span>{user.name}</span>
+                  <span className="text-blue-200">({user.role})</span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleLogout}
+                  className="text-white hover:bg-blue-700"
+                >
+                  <LogOut className="w-4 h-4" />
+                </Button>
+              </div>
+            </header>
+
+            {/* Tab Manager */}
+            <TabManager
+              tabs={tabs}
+              activeTabId={activeTabId}
+              onTabChange={handleTabChange}
+              onTabClose={handleTabClose}
+            />
+
+            {/* Content Area */}
+            <main className="flex-1 p-6 bg-gray-50 overflow-auto">
+              {renderTabContent()}
+            </main>
+          </div>
+        </SidebarInset>
+      </div>
+    </SidebarProvider>
+  )
+}
