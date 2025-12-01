@@ -1,12 +1,11 @@
 import { useState } from 'react'
-import { Button } from './ui/button'
-import { X, Plus, BarChart3, ShoppingCart, TrendingUp, Package, Users } from 'lucide-react'
+import { X, BarChart3, ShoppingCart, TrendingUp, Package, Users } from 'lucide-react'
 import { cn } from './ui/utils'
 
 export interface Tab {
   id: string
   title: string
-  component: 'dashboard' | 'purchase-orders' | 'sales-orders' | 'inventory' | 'inventory-on-hand' | 'inventory-transactions' | 'inventory-adjustment' | 'access-distribution' | 'purchase-order' | 'sales-order'
+  component: 'dashboard' | 'purchase-orders' | 'sales-orders' | 'inventory' | 'inventory-on-hand' | 'inventory-transactions' | 'inventory-adjustment' | 'access-distribution' | 'purchase-order' | 'sales-order' | 'items' | 'item' | 'price-books' | 'price-book'
   icon: any
   closable: boolean
   orderId?: string

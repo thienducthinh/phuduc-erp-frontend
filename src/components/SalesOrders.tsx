@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog'
 import { Label } from './ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
-import { Plus, Search, Eye, Edit, Download } from 'lucide-react'
+import { Plus, Search, ArrowRight } from 'lucide-react'
 
 interface SalesOrder {
   id: string
@@ -91,14 +91,13 @@ interface SalesOrdersProps {
 export function SalesOrders({ onOpenDetail }: SalesOrdersProps) {
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [activeTab, setActiveTab] = useState('all')
   const [salesOrders, setSalesOrders] = useState<SalesOrder[]>(mockSalesOrders)
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [newOrder, setNewOrder] = useState({
     customer: '',
     type: '',
-    deliveryDate: '',
-    priority: ''
+    deliveryDate: ''
   })
 
   const filteredOrders = salesOrders.filter(order => {
@@ -124,14 +123,8 @@ export function SalesOrders({ onOpenDetail }: SalesOrdersProps) {
     }
 
     setSalesOrders([...salesOrders, newSO])
-    setNewOrder({ customer: '', type: '', deliveryDate: '', priority: '' })
+    setNewOrder({ customer: '', type: '', deliveryDate: '' })
     setIsCreateDialogOpen(false)
-  }
-
-  const handleStatusChange = (orderId: string, newStatus: SalesOrder['status']) => {
-    setSalesOrders(salesOrders.map(order =>
-      order.id === orderId ? { ...order, status: newStatus } : order
-    ))
   }
 
   const getStatusColor = (status: string) => {
@@ -149,13 +142,60 @@ export function SalesOrders({ onOpenDetail }: SalesOrdersProps) {
     return type === 'wholesale' ? 'bg-purple-100 text-purple-800' : 'bg-orange-100 text-orange-800'
   }
 
+  const renderOrdersTable = () => (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead className="w-8"></TableHead>
+          <TableHead>SO Number</TableHead>
+          <TableHead>Customer</TableHead>
+          <TableHead>Type</TableHead>
+          <TableHead>Order Date</TableHead>
+          <TableHead>Delivery Date</TableHead>
+          <TableHead>Status</TableHead>
+          <TableHead>Items</TableHead>
+          <TableHead>Total</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {filteredOrders.map((order) => (
+          <TableRow key={order.id}>
+            <TableCell>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onOpenDetail(order.id)}
+                title="View Details"
+              >
+                <ArrowRight className="w-4 h-4" />
+              </Button>
+            </TableCell>
+            <TableCell className="font-medium">{order.id}</TableCell>
+            <TableCell>{order.customer}</TableCell>
+            <TableCell>
+              <Badge className={getTypeColor(order.type)}>
+                {order.type.charAt(0).toUpperCase() + order.type.slice(1)}
+              </Badge>
+            </TableCell>
+            <TableCell>{new Date(order.orderDate).toLocaleDateString()}</TableCell>
+            <TableCell>{new Date(order.deliveryDate).toLocaleDateString()}</TableCell>
+            <TableCell>
+              <Badge className={getStatusColor(order.status)}>
+                {order.status}
+              </Badge>
+            </TableCell>
+            <TableCell>{order.items}</TableCell>
+            <TableCell>${order.total.toLocaleString()}</TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  )
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl mb-2">Sales Orders</h2>
-          <p className="text-muted-foreground">Manage wholesale and retail sales orders</p>
-        </div>
+        <h2 className="text-2xl">Sales Orders</h2>
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
             <Button>
@@ -163,24 +203,24 @@ export function SalesOrders({ onOpenDetail }: SalesOrdersProps) {
               New Sales Order
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>Create Sales Order</DialogTitle>
               <DialogDescription>
                 Create a new sales order for your customer
               </DialogDescription>
             </DialogHeader>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="customer">Customer</Label>
-                <Input 
+                <Label>Customer</Label>
+                <Input
                   placeholder="Customer name"
                   value={newOrder.customer}
                   onChange={(e) => setNewOrder({...newOrder, customer: e.target.value})}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="type">Order Type</Label>
+                <Label>Order Type</Label>
                 <Select value={newOrder.type} onValueChange={(value) => setNewOrder({...newOrder, type: value})}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select type" />
@@ -192,33 +232,20 @@ export function SalesOrders({ onOpenDetail }: SalesOrdersProps) {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="delivery-date">Delivery Date</Label>
-                <Input 
+                <Label>Delivery Date</Label>
+                <Input
                   type="date"
                   value={newOrder.deliveryDate}
                   onChange={(e) => setNewOrder({...newOrder, deliveryDate: e.target.value})}
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="priority">Priority</Label>
-                <Select value={newOrder.priority} onValueChange={(value) => setNewOrder({...newOrder, priority: value})}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select priority" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="low">Low</SelectItem>
-                    <SelectItem value="medium">Medium</SelectItem>
-                    <SelectItem value="high">High</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
             </div>
-            <div className="flex justify-end space-x-2 pt-4">
+            <div className="flex justify-end gap-2 pt-4">
               <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
                 Cancel
               </Button>
               <Button onClick={handleCreateOrder} disabled={!newOrder.customer || !newOrder.type || !newOrder.deliveryDate}>
-                Create Order
+                Create
               </Button>
             </div>
           </DialogContent>
@@ -227,186 +254,40 @@ export function SalesOrders({ onOpenDetail }: SalesOrdersProps) {
 
       <Card>
         <CardHeader>
-          <div className="flex flex-col sm:flex-row gap-4 justify-between">
-            <div className="flex gap-2">
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search by customer or SO number..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 w-80"
-                />
-              </div>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-40">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="draft">Draft</SelectItem>
-                  <SelectItem value="confirmed">Confirmed</SelectItem>
-                  <SelectItem value="shipped">Shipped</SelectItem>
-                  <SelectItem value="delivered">Delivered</SelectItem>
-                  <SelectItem value="cancelled">Cancelled</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="flex gap-2">
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-40">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="draft">Draft</SelectItem>
+                <SelectItem value="confirmed">Confirmed</SelectItem>
+                <SelectItem value="shipped">Shipped</SelectItem>
+                <SelectItem value="delivered">Delivered</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </CardHeader>
         <CardContent>
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="all">All Orders</TabsTrigger>
+              <TabsTrigger value="all">All</TabsTrigger>
               <TabsTrigger value="wholesale">Wholesale</TabsTrigger>
               <TabsTrigger value="retail">Retail</TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="all" className="mt-6">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>SO Number</TableHead>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Order Date</TableHead>
-                    <TableHead>Delivery Date</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Items</TableHead>
-                    <TableHead>Total</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredOrders.map((order) => (
-                    <TableRow key={order.id}>
-                      <TableCell className="font-medium">{order.id}</TableCell>
-                      <TableCell>{order.customer}</TableCell>
-                      <TableCell>
-                        <Badge className={getTypeColor(order.type)}>
-                          {order.type.charAt(0).toUpperCase() + order.type.slice(1)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{new Date(order.orderDate).toLocaleDateString()}</TableCell>
-                      <TableCell>{new Date(order.deliveryDate).toLocaleDateString()}</TableCell>
-                      <TableCell>
-                        <Badge className={getStatusColor(order.status)}>
-                          {order.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{order.items}</TableCell>
-                      <TableCell>${order.total.toLocaleString()}</TableCell>
-                      <TableCell>
-                        <div className="flex space-x-2">
-                          <Button variant="ghost" size="sm">
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm">
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm">
-                            <Download className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              {renderOrdersTable()}
             </TabsContent>
 
             <TabsContent value="wholesale" className="mt-6">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>SO Number</TableHead>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Order Date</TableHead>
-                    <TableHead>Delivery Date</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Items</TableHead>
-                    <TableHead>Total</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredOrders.filter(order => order.type === 'wholesale').map((order) => (
-                    <TableRow key={order.id}>
-                      <TableCell className="font-medium">{order.id}</TableCell>
-                      <TableCell>{order.customer}</TableCell>
-                      <TableCell>{new Date(order.orderDate).toLocaleDateString()}</TableCell>
-                      <TableCell>{new Date(order.deliveryDate).toLocaleDateString()}</TableCell>
-                      <TableCell>
-                        <Badge className={getStatusColor(order.status)}>
-                          {order.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{order.items}</TableCell>
-                      <TableCell>${order.total.toLocaleString()}</TableCell>
-                      <TableCell>
-                        <div className="flex space-x-2">
-                          <Button variant="ghost" size="sm">
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm">
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm">
-                            <Download className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              {renderOrdersTable()}
             </TabsContent>
 
             <TabsContent value="retail" className="mt-6">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>SO Number</TableHead>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Order Date</TableHead>
-                    <TableHead>Delivery Date</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Items</TableHead>
-                    <TableHead>Total</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredOrders.filter(order => order.type === 'retail').map((order) => (
-                    <TableRow key={order.id}>
-                      <TableCell className="font-medium">{order.id}</TableCell>
-                      <TableCell>{order.customer}</TableCell>
-                      <TableCell>{new Date(order.orderDate).toLocaleDateString()}</TableCell>
-                      <TableCell>{new Date(order.deliveryDate).toLocaleDateString()}</TableCell>
-                      <TableCell>
-                        <Badge className={getStatusColor(order.status)}>
-                          {order.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{order.items}</TableCell>
-                      <TableCell>${order.total.toLocaleString()}</TableCell>
-                      <TableCell>
-                        <div className="flex space-x-2">
-                          <Button variant="ghost" size="sm">
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm">
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm">
-                            <Download className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              {renderOrdersTable()}
             </TabsContent>
           </Tabs>
         </CardContent>

@@ -6,11 +6,22 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { Badge } from './ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
 import { Checkbox } from './ui/checkbox'
-import { Plus, ArrowRight, Trash2, Save, RefreshCw, Binoculars, Filter } from 'lucide-react'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from './ui/alert-dialog'
+import { Plus, ArrowRight, Trash2, Binoculars } from 'lucide-react'
 
 interface PurchaseOrder {
   id: string
   vendor: string
+  vendorName: string
   orderDate: string
   expectedDate: string
   status: 'Draft' | 'Pending' | 'Approved' | 'Received' | 'Cancelled'
@@ -21,7 +32,8 @@ interface PurchaseOrder {
 const mockPurchaseOrders: PurchaseOrder[] = [
   {
     id: 'PO-001',
-    vendor: 'Tech Supplies Inc',
+    vendor: 'XXX0123',
+    vendorName: 'Tech Supplies Inc',
     orderDate: '2024-01-15',
     expectedDate: '2024-01-25',
     status: 'Pending',
@@ -30,7 +42,8 @@ const mockPurchaseOrders: PurchaseOrder[] = [
   },
   {
     id: 'PO-002',
-    vendor: 'Global Electronics',
+    vendor: 'XXX0456',
+    vendorName: 'Global Electronics',
     orderDate: '2024-01-12',
     expectedDate: '2024-01-22',
     status: 'Approved',
@@ -39,7 +52,8 @@ const mockPurchaseOrders: PurchaseOrder[] = [
   },
   {
     id: 'PO-003',
-    vendor: 'Office Depot Pro',
+    vendor: 'XXX0789',
+    vendorName: 'Office Depot Pro',
     orderDate: '2024-01-10',
     expectedDate: '2024-01-20',
     status: 'Received',
@@ -48,7 +62,8 @@ const mockPurchaseOrders: PurchaseOrder[] = [
   },
   {
     id: 'PO-004',
-    vendor: 'Industrial Parts Co',
+    vendor: 'XXX0124',
+    vendorName: 'Industrial Parts Co',
     orderDate: '2024-01-08',
     expectedDate: '2024-01-18',
     status: 'Draft',
@@ -57,13 +72,16 @@ const mockPurchaseOrders: PurchaseOrder[] = [
   },
 ]
 
-interface PurchaseOrdersProps {
+interface PurchaseOrderDetail {
   onOpenDetail: (orderId: string) => void
 }
 
-export function PurchaseOrders({ onOpenDetail }: PurchaseOrdersProps) {
+export function PurchaseOrders({ onOpenDetail }: PurchaseOrderDetail) {
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>(mockPurchaseOrders)
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set())
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [showLookupDialog, setShowLookupDialog] = useState(false)
+  const [lookupPONumber, setLookupPONumber] = useState('')
   const [filters, setFilters] = useState({
     id: '',
     vendor: '',
@@ -162,9 +180,36 @@ export function PurchaseOrders({ onOpenDetail }: PurchaseOrdersProps) {
     setSelectedRows(newSelected)
   }
 
-  const handleDelete = () => {
+  const handleDeleteClick = () => {
+    setShowDeleteDialog(true)
+  }
+
+  const handleConfirmDelete = () => {
     setPurchaseOrders(purchaseOrders.filter(order => !selectedRows.has(order.id)))
     setSelectedRows(new Set())
+    setShowDeleteDialog(false)
+  }
+
+  const handleLookupClick = () => {
+    setLookupPONumber('')
+    setShowLookupDialog(true)
+  }
+
+  const handleConfirmLookup = () => {
+    const poNumber = lookupPONumber.trim()
+    if (!poNumber) return
+
+    const order = purchaseOrders.find(order =>
+      order.id.toLowerCase() === poNumber.toLowerCase()
+    )
+
+    if (order) {
+      onOpenDetail(order.id)
+      setShowLookupDialog(false)
+      setLookupPONumber('')
+    } else {
+      alert(`Purchase Order "${poNumber}" not found.`)
+    }
   }
 
   return (
@@ -172,28 +217,19 @@ export function PurchaseOrders({ onOpenDetail }: PurchaseOrdersProps) {
       <div>
         <h2 className="text-2xl mb-4">Purchase Orders</h2>
         <div className="flex gap-2 mb-4">
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={() => onOpenDetail('new')}>
             <Plus className="w-4 h-4 mr-2" />
             Add
           </Button>
           <Button
             variant="outline"
             size="sm"
-            onClick={handleDelete}
-            disabled={selectedRows.size === 0}
-          >
+            onClick={handleDeleteClick}
+            disabled={selectedRows.size === 0}>
             <Trash2 className="w-4 h-4 mr-2" />
             Delete
           </Button>
-          <Button variant="outline" size="sm">
-            <Save className="w-4 h-4 mr-2" />
-            Save
-          </Button>
-          <Button variant="outline" size="sm">
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Refresh
-          </Button>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={handleLookupClick}>
             <Binoculars className="w-4 h-4 mr-2" />
             Binoculars
           </Button>
@@ -214,6 +250,7 @@ export function PurchaseOrders({ onOpenDetail }: PurchaseOrdersProps) {
                 <TableHead className="w-8"></TableHead>
                 <TableHead>Mã Đơn hàng</TableHead>
                 <TableHead>Vendor</TableHead>
+                <TableHead></TableHead>
                 <TableHead>Order Date</TableHead>
                 <TableHead>Expected Date</TableHead>
                 <TableHead>Status</TableHead>
@@ -343,14 +380,14 @@ export function PurchaseOrders({ onOpenDetail }: PurchaseOrdersProps) {
                         variant="ghost"
                         size="sm"
                         title="View Details"
-                        onClick={() => onOpenDetail(order.id)}
-                      >
+                        onClick={() => onOpenDetail(order.id)}>
                         <ArrowRight className="w-4 h-4" />
                       </Button>
                     </div>
                   </TableCell>
                   <TableCell className="font-medium">{order.id}</TableCell>
                   <TableCell>{order.vendor}</TableCell>
+                  <TableCell>{order.vendorName}</TableCell>
                   <TableCell>{new Date(order.orderDate).toLocaleDateString()}</TableCell>
                   <TableCell>{new Date(order.expectedDate).toLocaleDateString()}</TableCell>
                   <TableCell>
@@ -360,13 +397,60 @@ export function PurchaseOrders({ onOpenDetail }: PurchaseOrdersProps) {
                   </TableCell>
                   <TableCell>{order.items}</TableCell>
                   <TableCell>${order.total.toLocaleString()}</TableCell>
-                  
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Delete</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete {selectedRows.size} purchase order{selectedRows.size > 1 ? 's' : ''}?
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDelete} className="bg-red-600 hover:bg-red-700">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={showLookupDialog} onOpenChange={setShowLookupDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Tìm kiếm Đơn mua hàng</AlertDialogTitle>
+            <AlertDialogDescription>
+              Nhập số Đơn mua hàng để mở chi tiết.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-4">
+            <Input
+              placeholder="Nhập số Đơn mua hàng"
+              value={lookupPONumber}
+              onChange={(e) => setLookupPONumber(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleConfirmLookup()
+                }
+              }}
+              autoFocus
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Huỷ bỏ</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmLookup} className="bg-blue-600 hover:bg-blue-700">
+              Tìm kiếm
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

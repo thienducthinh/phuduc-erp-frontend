@@ -10,8 +10,12 @@ import { Inventory } from './components/Inventory'
 import { AccessDistribution } from './components/AccessDistribution'
 import { PurchaseOrderDetail } from './components/PurchaseOrderDetail'
 import { SalesOrderDetail } from './components/SalesOrderDetail'
+import { Items } from './components/Items'
+import { ItemDetail } from './components/ItemDetail'
+import { PriceBooks } from './components/PriceBooks'
+import { PriceBookDetail } from './components/PriceBookDetail'
 import { TabManager, Tab } from './components/TabManager'
-import { User as UserIcon, LogOut, Building2, BarChart3, ShoppingCart, TrendingUp, Package, Users, ChevronDown, ChevronRight } from 'lucide-react'
+import { User as UserIcon, LogOut, Building2, BarChart3, ShoppingCart, TrendingUp, Package, Users, ChevronDown, ChevronRight, Component, DollarSign } from 'lucide-react'
 
 interface User {
   id: string
@@ -29,6 +33,12 @@ const navigationItems = [
     label: 'Dashboard',
     icon: BarChart3,
     component: 'dashboard' as const
+  },
+  {
+    id: "items",
+    label: "Sản phẩm",
+    icon: Package,
+    component: 'items' as const
   },
   {
     id: 'purchase-orders',
@@ -83,6 +93,23 @@ const navigationItems = [
         id: 'inventory-adjustment',
         label: 'Adjustment',
         component: 'inventory-adjustment' as const
+      }
+    ]
+  },
+  {
+    id: 'price-books',
+    label: 'Price Books',
+    icon: DollarSign,
+    subItems: [
+      {
+        id: 'price-books-list',
+        label: 'Price Book List',
+        component: 'price-books' as const
+      },
+      {
+        id: 'price-book-new',
+        label: 'New Price Book',
+        component: 'price-book' as const
       }
     ]
   }
@@ -171,12 +198,10 @@ export default function App() {
 
     // Handle sub-items that pass component directly
     if (component) {
-      // Determine title and orderId based on component type
       let title = label || ''
       let orderId: string | undefined = undefined
 
-      if (component === 'purchase-order' || component === 'sales-order') {
-        title = component === 'purchase-order' ? 'New Purchase Order' : 'New Sales Order'
+      if (component === 'purchase-order' || component === 'sales-order' || component === 'item' || component === 'price-book') {
         orderId = 'new'
       }
 
@@ -197,7 +222,7 @@ export default function App() {
         id: `tab-${tabIdCounter++}`,
         title,
         component: component as any,
-        icon: icon || (component === 'purchase-order' ? ShoppingCart : component === 'sales-order' ? TrendingUp : Package),
+        icon: icon || (component === 'purchase-order' ? ShoppingCart : component === 'sales-order' ? TrendingUp : component === 'price-book' ? DollarSign : Package),
         closable: true,
         ...(orderId && { orderId })
       }
@@ -235,23 +260,57 @@ export default function App() {
     setActiveTabId(newTab.id)
   }
 
-  const handleOpenDetailTab = (type: 'purchase-order' | 'sales-order', orderId: string) => {
-    const title = type === 'purchase-order' ? `Purchase Order ${orderId}` : `Sales Order ${orderId}`
-    
-    // Check if tab already exists
-    const existingTab = tabs.find(tab => tab.component === type && tab.title === title)
-    if (existingTab) {
+  const handleOpenDetailTab = (type: 'purchase-order' | 'sales-order' | 'item' | 'price-book', id: string) => {
+    let title = ''
+    let icon = ShoppingCart
+
+    switch (type) {
+      case 'purchase-order':
+        title = 'Purchase Order Detail'
+        icon = ShoppingCart
+        break
+      case 'sales-order':
+        title = 'Sales Order Detail'
+        icon = TrendingUp
+        break
+      case 'item':
+        title = 'Item Details'
+        icon = Package
+        break
+      case 'price-book':
+        title = 'Price Book Details'
+        icon = DollarSign
+        break
+    }
+
+    // Check if a detail tab of this type already exists (regardless of which item)
+    const existingTabIndex = tabs.findIndex(tab => tab.component === type)
+
+    if (existingTabIndex !== -1) {
+      // Update the existing tab with new id and title
+      const existingTab = tabs[existingTabIndex]!
+      const updatedTabs = [...tabs]
+      updatedTabs[existingTabIndex] = {
+        id: existingTab.id,
+        title,
+        component: existingTab.component,
+        icon: existingTab.icon,
+        closable: existingTab.closable,
+        orderId: id
+      }
+      setTabs(updatedTabs)
       setActiveTabId(existingTab.id)
       return
     }
 
+    // Create new tab if none exists
     const newTab: Tab = {
       id: `tab-${tabIdCounter++}`,
       title,
       component: type,
-      icon: type === 'purchase-order' ? ShoppingCart : TrendingUp,
+      icon: icon,
       closable: true,
-      orderId
+      orderId: id
     }
 
     setTabs([...tabs, newTab])
@@ -265,10 +324,14 @@ export default function App() {
     switch (activeTab.component) {
       case 'dashboard':
         return <Dashboard />
+      case 'items':
+        return <Items onOpenDetail={(itemId) => handleOpenDetailTab('item', itemId)} />
       case 'purchase-orders':
         return <PurchaseOrders onOpenDetail={(orderId) => handleOpenDetailTab('purchase-order', orderId)} />
       case 'sales-orders':
         return <SalesOrders onOpenDetail={(orderId) => handleOpenDetailTab('sales-order', orderId)} />
+      case 'price-books':
+        return <PriceBooks onOpenDetail={(priceBookId) => handleOpenDetailTab('price-book', priceBookId)} />
       case 'inventory':
         return <Inventory />
       case 'inventory-on-hand':
@@ -279,10 +342,14 @@ export default function App() {
         return <Inventory />
       case 'access-distribution':
         return <AccessDistribution />
+      case 'item':
+        return <ItemDetail itemId={activeTab.orderId!} />
       case 'purchase-order':
         return <PurchaseOrderDetail orderId={activeTab.orderId!} />
       case 'sales-order':
         return <SalesOrderDetail orderId={activeTab.orderId!} />
+      case 'price-book':
+        return <PriceBookDetail priceBookId={activeTab.orderId!} />
       default:
         return <Dashboard />
     }

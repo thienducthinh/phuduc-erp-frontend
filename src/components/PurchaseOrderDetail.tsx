@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
+import { useState, useEffect } from 'react'
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Label } from './ui/label'
@@ -9,7 +9,7 @@ import { Badge } from './ui/badge'
 import { Textarea } from './ui/textarea'
 import { Separator } from './ui/separator'
 import { Checkbox } from './ui/checkbox'
-import { Edit, Save, Plus, Trash2, Download, Send, ArrowLeft, RefreshCw, Binoculars } from 'lucide-react'
+import { Plus, Trash2, Download, Send, ArrowLeft, RefreshCw, Binoculars } from 'lucide-react'
 
 // Reusable filter operator components
 const TextFilterOperators = () => (
@@ -61,20 +61,123 @@ interface PurchaseOrderHeader {
   total: number
 }
 
-const mockPOHeader: PurchaseOrderHeader = {
-  id: 'PO-001',
-  vendor: 'Tech Supplies Inc',
-  vendorAddress: '123 Technology Ave, Silicon Valley, CA 94000',
-  orderDate: '2024-01-15',
-  expectedDate: '2024-01-30',
-  status: 'Approved',
+const mockPOHeaders: Record<string, PurchaseOrderHeader> = {
+  'PO-001': {
+    id: 'PO-001',
+    vendor: 'Tech Supplies Inc',
+    vendorAddress: '123 Technology Ave, Silicon Valley, CA 94000',
+    orderDate: '2024-01-15',
+    expectedDate: '2024-01-30',
+    status: 'Approved',
+    currency: 'USD',
+    paymentTerms: 'Net 30',
+    deliveryTerms: 'FOB Destination',
+    notes: 'Urgent delivery required for Q1 projects',
+    subtotal: 25500.00,
+    taxAmount: 2550.00,
+    total: 28050.00
+  },
+  'PO-002': {
+    id: 'PO-002',
+    vendor: 'Global Electronics',
+    vendorAddress: '456 Electronics Blvd, Tech City, NY 10001',
+    orderDate: '2024-01-12',
+    expectedDate: '2024-01-22',
+    status: 'Pending',
+    currency: 'USD',
+    paymentTerms: 'Net 60',
+    deliveryTerms: 'FOB Origin',
+    notes: 'Standard delivery terms apply',
+    subtotal: 22100.00,
+    taxAmount: 2210.00,
+    total: 24310.00
+  },
+  'PO-003': {
+    id: 'PO-003',
+    vendor: 'Office Depot Pro',
+    vendorAddress: '789 Office Park, Business District, CA 90210',
+    orderDate: '2024-01-10',
+    expectedDate: '2024-01-20',
+    status: 'Received',
+    currency: 'USD',
+    paymentTerms: 'Net 30',
+    deliveryTerms: 'CIF',
+    notes: 'All items received and inspected',
+    subtotal: 8750.00,
+    taxAmount: 875.00,
+    total: 9625.00
+  },
+  'PO-004': {
+    id: 'PO-004',
+    vendor: 'Industrial Parts Co',
+    vendorAddress: '321 Industrial Way, Manufacturing Zone, TX 75001',
+    orderDate: '2024-01-08',
+    expectedDate: '2024-01-18',
+    status: 'Draft',
+    currency: 'USD',
+    paymentTerms: 'Prepaid',
+    deliveryTerms: 'EXW',
+    notes: 'Draft order - pending approval',
+    subtotal: 31200.00,
+    taxAmount: 3120.00,
+    total: 34320.00
+  }
+}
+
+const getTodayDate = () => {
+  const today = new Date().toISOString().split('T')[0]
+  return today || ''
+}
+
+const emptyPOHeader: PurchaseOrderHeader = {
+  id: '',
+  vendor: '',
+  vendorAddress: '',
+  orderDate: getTodayDate(),
+  expectedDate: getTodayDate(),
+  status: 'Draft',
   currency: 'USD',
   paymentTerms: 'Net 30',
   deliveryTerms: 'FOB Destination',
-  notes: 'Urgent delivery required for Q1 projects',
-  subtotal: 25500.00,
-  taxAmount: 2550.00,
-  total: 28050.00
+  notes: '',
+  subtotal: 0,
+  taxAmount: 0,
+  total: 0
+}
+
+// Items Master Data
+interface ItemMaster {
+  itemCode: string
+  description: string
+  unitPrice: number
+}
+
+const itemsMasterData: Record<string, ItemMaster> = {
+  'LAPTOP001': {
+    itemCode: 'LAPTOP001',
+    description: 'Business Laptop Pro 15"',
+    unitPrice: 1200.00
+  },
+  'MONITOR002': {
+    itemCode: 'MONITOR002',
+    description: '27" 4K Monitor',
+    unitPrice: 350.00
+  },
+  'MOUSE003': {
+    itemCode: 'MOUSE003',
+    description: 'Wireless Mouse with USB-C',
+    unitPrice: 35.00
+  },
+  'KEYBOARD004': {
+    itemCode: 'KEYBOARD004',
+    description: 'Mechanical Keyboard RGB',
+    unitPrice: 89.00
+  },
+  'CABLE005': {
+    itemCode: 'CABLE005',
+    description: 'USB-C to HDMI Cable 2m',
+    unitPrice: 25.00
+  }
 }
 
 const mockPOLines: PurchaseOrderLine[] = [
@@ -140,11 +243,19 @@ interface PurchaseOrderDetailProps {
 }
 
 export function PurchaseOrderDetail({ orderId }: PurchaseOrderDetailProps) {
-  const [header, setHeader] = useState<PurchaseOrderHeader>(mockPOHeader)
-  const [lines, setLines] = useState<PurchaseOrderLine[]>(mockPOLines)
-  const [isEditing, setIsEditing] = useState(false)
-  const [isAddingLine, setIsAddingLine] = useState(false)
+  const [header, setHeader] = useState<PurchaseOrderHeader>(
+    orderId === 'new' ? emptyPOHeader : (mockPOHeaders[orderId] || emptyPOHeader)
+  )
+  const [lines, setLines] = useState<PurchaseOrderLine[]>(orderId === 'new' ? [] : mockPOLines)
+  const [isEditing, setIsEditing] = useState(orderId === 'new')
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set())
+  const [previousDateValues, setPreviousDateValues] = useState<{ orderDate: string; expectedDate: string }>({
+    orderDate: '',
+    expectedDate: ''
+  })
+  const [previousLineValues, setPreviousLineValues] = useState<Record<string, { quantity: number; discount: number }>>({})
+  const [focusedLineField, setFocusedLineField] = useState<string>('')
+
   const [filters, setFilters] = useState({
     itemCode: '',
     description: '',
@@ -160,6 +271,14 @@ export function PurchaseOrderDetail({ orderId }: PurchaseOrderDetailProps) {
     unitPrice: 'equals',
     discount: 'equals'
   })
+
+  // Update data when orderId changes
+  useEffect(() => {
+    const newHeader = orderId === 'new' ? emptyPOHeader : (mockPOHeaders[orderId] || emptyPOHeader)
+    setHeader(newHeader)
+    setLines(orderId === 'new' ? [] : mockPOLines)
+    setIsEditing(orderId === 'new')
+  }, [orderId])
 
   const applyFilter = (value: any, filterValue: string, operator: string) => {
     if (!filterValue) return true
@@ -252,9 +371,108 @@ export function PurchaseOrderDetail({ orderId }: PurchaseOrderDetailProps) {
     }
   }
 
-  const handleSave = () => {
-    setIsEditing(false)
-    // Save logic here
+  const formatVND = (amount: number) => {
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(amount)
+  }
+
+  const handleDateShortcut = (value: string): string | null => {
+    // Handle shortcuts like "+3" for today + 3 days, "-2" for today - 2 days
+    const match = value.match(/^([+-])(\d+)$/)
+    if (match) {
+      const [, sign, days] = match
+      const today = new Date()
+      const offset = parseInt(days) * (sign === '+' ? 1 : -1)
+      today.setDate(today.getDate() + offset)
+      const dateStr = today.toISOString().split('T')[0]
+      return dateStr || null
+    }
+    return null
+  }
+
+  const handleDateInput = (field: 'orderDate' | 'expectedDate', value: string) => {
+    // If value is empty, restore the previous value
+    if (!value.trim()) {
+      setHeader({...header, [field]: previousDateValues[field]})
+      return
+    }
+
+    const shortcutDate = handleDateShortcut(value)
+    if (shortcutDate) {
+      setHeader({...header, [field]: shortcutDate})
+    } else {
+      setHeader({...header, [field]: value})
+    }
+  }
+
+  const handleDateFocus = (field: 'orderDate' | 'expectedDate') => {
+    // Store the current value before clearing
+    setPreviousDateValues({
+      ...previousDateValues,
+      [field]: header[field]
+    })
+    // Clear the field
+    setHeader({...header, [field]: ''})
+  }
+
+  const handleQuantityFocus = (lineId: string) => {
+    // Store the current quantity value before clearing
+    const line = lines.find(l => l.id === lineId)
+    if (line) {
+      setPreviousLineValues({
+        ...previousLineValues,
+        [lineId]: {
+          quantity: line.quantity,
+          discount: previousLineValues[lineId]?.discount ?? line.discount
+        }
+      })
+      // Mark this field as focused (display empty)
+      setFocusedLineField(`${lineId}:quantity`)
+    }
+  }
+
+  const handleQuantityBlur = (lineId: string, value: number) => {
+    // Clear focused state
+    setFocusedLineField('')
+    // If the field is empty, restore the previous value
+    if (!value || value === 0) {
+      const previousValue = previousLineValues[lineId]?.quantity
+      if (previousValue !== undefined && previousValue > 0) {
+        updateLine(lineId, 'quantity', previousValue)
+      }
+    }
+  }
+
+  const handleDiscountFocus = (lineId: string) => {
+    // Store the current discount value before clearing
+    const line = lines.find(l => l.id === lineId)
+    if (line) {
+      setPreviousLineValues({
+        ...previousLineValues,
+        [lineId]: {
+          quantity: previousLineValues[lineId]?.quantity ?? line.quantity,
+          discount: line.discount
+        }
+      })
+      // Mark this field as focused (display empty)
+      setFocusedLineField(`${lineId}:discount`)
+    }
+  }
+
+  const handleDiscountBlur = (lineId: string, value: number) => {
+    // Clear focused state
+    setFocusedLineField('')
+    // If the field is empty, restore the previous value
+    if (!value || value === 0) {
+      const previousValue = previousLineValues[lineId]?.discount
+      if (previousValue !== undefined && previousValue > 0) {
+        updateLine(lineId, 'discount', previousValue)
+      }
+    }
   }
 
   const handleAddLine = () => {
@@ -262,7 +480,7 @@ export function PurchaseOrderDetail({ orderId }: PurchaseOrderDetailProps) {
       id: String(lines.length + 1),
       itemCode: '',
       description: '',
-      quantity: 1,
+      quantity: 0,
       unitPrice: 0,
       discount: 0,
       lineTotal: 0,
@@ -270,11 +488,6 @@ export function PurchaseOrderDetail({ orderId }: PurchaseOrderDetailProps) {
       status: 'pending'
     }
     setLines([...lines, newLine])
-    setIsAddingLine(false)
-  }
-
-  const handleDeleteLine = (lineId: string) => {
-    setLines(lines.filter(line => line.id !== lineId))
   }
 
   const calculateLineTotal = (quantity: number, unitPrice: number, discount: number) => {
@@ -285,6 +498,25 @@ export function PurchaseOrderDetail({ orderId }: PurchaseOrderDetailProps) {
     setLines(lines.map(line => {
       if (line.id === lineId) {
         const updatedLine = { ...line, [field]: value }
+
+        // Auto-lookup description and unitPrice when itemCode changes
+        if (field === 'itemCode') {
+          const itemCode = value.toUpperCase()
+          const itemData = itemsMasterData[itemCode]
+          if (itemData) {
+            updatedLine.itemCode = itemData.itemCode
+            updatedLine.description = itemData.description
+            updatedLine.unitPrice = itemData.unitPrice
+            // Recalculate line total with new unit price
+            updatedLine.lineTotal = calculateLineTotal(
+              updatedLine.quantity,
+              updatedLine.unitPrice,
+              updatedLine.discount
+            )
+          }
+        }
+
+        // Recalculate line total when quantity, unitPrice, or discount changes
         if (field === 'quantity' || field === 'unitPrice' || field === 'discount') {
           updatedLine.lineTotal = calculateLineTotal(
             updatedLine.quantity,
@@ -300,25 +532,9 @@ export function PurchaseOrderDetail({ orderId }: PurchaseOrderDetailProps) {
 
   return (
     <div className="space-y-6">
-      {/* Header Actions */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl mb-2">Purchase Order</h2>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to List
-          </Button>
-          <Button variant="outline">
-            <Download className="w-4 h-4 mr-2" />
-            Print
-          </Button>
-          <Button variant="outline">
-            <Send className="w-4 h-4 mr-2" />
-            Send
-          </Button>
-        </div>
+      {/* Header */}
+      <div>
+        <h2 className="text-2xl mb-2">Purchase Order</h2>
       </div>
 
       {/* Purchase Order Header */}
@@ -344,14 +560,6 @@ export function PurchaseOrderDetail({ orderId }: PurchaseOrderDetailProps) {
               <Trash2 className="w-4 h-4 mr-2" />
               Delete
             </Button>
-            <Button variant="outline" size="sm">
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Refresh
-            </Button>
-            <Button variant="outline" size="sm">
-              <Binoculars className="w-4 h-4 mr-2" />
-              Binoculars
-            </Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -373,17 +581,23 @@ export function PurchaseOrderDetail({ orderId }: PurchaseOrderDetailProps) {
             <div className="space-y-2">
               <Label htmlFor="orderDate">Order Date</Label>
               <Input
-                type="date"
+                type="text"
                 value={header.orderDate}
                 onChange={(e) => setHeader({...header, orderDate: e.target.value})}
+                onFocus={() => handleDateFocus('orderDate')}
+                onBlur={(e) => handleDateInput('orderDate', e.target.value)}
+                placeholder=""
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="expectedDate">Expected Date</Label>
               <Input
-                type="date"
+                type="text"
                 value={header.expectedDate}
                 onChange={(e) => setHeader({...header, expectedDate: e.target.value})}
+                onFocus={() => handleDateFocus('expectedDate')}
+                onBlur={(e) => handleDateInput('expectedDate', e.target.value)}
+                placeholder=""
               />
             </div>
             <div className="space-y-2">
@@ -452,14 +666,6 @@ export function PurchaseOrderDetail({ orderId }: PurchaseOrderDetailProps) {
               <Trash2 className="w-4 h-4 mr-2" />
               Delete
             </Button>
-            <Button variant="outline" size="sm">
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Refresh
-            </Button>
-            <Button variant="outline" size="sm">
-              <Binoculars className="w-4 h-4 mr-2" />
-              Binoculars
-            </Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -489,7 +695,13 @@ export function PurchaseOrderDetail({ orderId }: PurchaseOrderDetailProps) {
                       <Select value={filterOperators.itemCode} onValueChange={(value) => updateOperator('itemCode', value)}>
                         <SelectTrigger className="h-8 w-8 px-2 bg-white">
                         </SelectTrigger>
-                        <TextFilterOperators />
+                        <SelectContent>
+                          <SelectItem value="equals">Equals</SelectItem>
+                          <SelectItem value="notEquals">Does Not Equal</SelectItem>
+                          <SelectItem value="contains">Contains</SelectItem>
+                          <SelectItem value="startsWith">Starts With</SelectItem>
+                          <SelectItem value="endsWith">Ends With</SelectItem>
+                        </SelectContent>
                       </Select>
                       <Input
                         placeholder=""
@@ -504,7 +716,13 @@ export function PurchaseOrderDetail({ orderId }: PurchaseOrderDetailProps) {
                       <Select value={filterOperators.description} onValueChange={(value) => updateOperator('description', value)}>
                         <SelectTrigger className="h-8 w-8 px-2 bg-white">
                         </SelectTrigger>
-                        <TextFilterOperators />
+                        <SelectContent>
+                          <SelectItem value="equals">Equals</SelectItem>
+                          <SelectItem value="notEquals">Does Not Equal</SelectItem>
+                          <SelectItem value="contains">Contains</SelectItem>
+                          <SelectItem value="startsWith">Starts With</SelectItem>
+                          <SelectItem value="endsWith">Ends With</SelectItem>
+                        </SelectContent>
                       </Select>
                       <Input
                         placeholder=""
@@ -519,7 +737,14 @@ export function PurchaseOrderDetail({ orderId }: PurchaseOrderDetailProps) {
                       <Select value={filterOperators.quantity} onValueChange={(value) => updateOperator('quantity', value)}>
                         <SelectTrigger className="h-8 w-8 px-2 bg-white">
                         </SelectTrigger>
-                        <NumericFilterOperators />
+                        <SelectContent>
+                          <SelectItem value="equals">Equals</SelectItem>
+                          <SelectItem value="notEquals">Does Not Equal</SelectItem>
+                          <SelectItem value="greaterThan">Greater Than</SelectItem>
+                          <SelectItem value="greaterThanOrEqual">Greater Than or Equal</SelectItem>
+                          <SelectItem value="lessThan">Less Than</SelectItem>
+                          <SelectItem value="lessThanOrEqual">Less Than or Equal</SelectItem>
+                        </SelectContent>
                       </Select>
                       <Input
                         placeholder=""
@@ -534,7 +759,14 @@ export function PurchaseOrderDetail({ orderId }: PurchaseOrderDetailProps) {
                       <Select value={filterOperators.unitPrice} onValueChange={(value) => updateOperator('unitPrice', value)}>
                         <SelectTrigger className="h-8 w-8 px-2 bg-white">
                         </SelectTrigger>
-                        <NumericFilterOperators />
+                        <SelectContent>
+                          <SelectItem value="equals">Equals</SelectItem>
+                          <SelectItem value="notEquals">Does Not Equal</SelectItem>
+                          <SelectItem value="greaterThan">Greater Than</SelectItem>
+                          <SelectItem value="greaterThanOrEqual">Greater Than or Equal</SelectItem>
+                          <SelectItem value="lessThan">Less Than</SelectItem>
+                          <SelectItem value="lessThanOrEqual">Less Than or Equal</SelectItem>
+                        </SelectContent>
                       </Select>
                       <Input
                         placeholder=""
@@ -549,7 +781,14 @@ export function PurchaseOrderDetail({ orderId }: PurchaseOrderDetailProps) {
                       <Select value={filterOperators.discount} onValueChange={(value) => updateOperator('discount', value)}>
                         <SelectTrigger className="h-8 w-8 px-2 bg-white">
                         </SelectTrigger>
-                        <NumericFilterOperators />
+                        <SelectContent>
+                          <SelectItem value="equals">Equals</SelectItem>
+                          <SelectItem value="notEquals">Does Not Equal</SelectItem>
+                          <SelectItem value="greaterThan">Greater Than</SelectItem>
+                          <SelectItem value="greaterThanOrEqual">Greater Than or Equal</SelectItem>
+                          <SelectItem value="lessThan">Less Than</SelectItem>
+                          <SelectItem value="lessThanOrEqual">Less Than or Equal</SelectItem>
+                        </SelectContent>
                       </Select>
                       <Input
                         placeholder=""
@@ -589,50 +828,43 @@ export function PurchaseOrderDetail({ orderId }: PurchaseOrderDetailProps) {
                       <Input
                         value={line.itemCode}
                         onChange={(e) => updateLine(line.id, 'itemCode', e.target.value)}
-                        disabled={!isEditing}
                         className="w-24"
                       />
                     </TableCell>
                     <TableCell>
-                      <Input
-                        value={line.description}
-                        onChange={(e) => updateLine(line.id, 'description', e.target.value)}
-                        disabled={!isEditing}
-                        className="min-w-48"
-                      />
+                      <div className="min-w-48 px-3 py-2 text-sm">
+                        {line.description}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <Input
                         type="number"
-                        value={line.quantity}
+                        value={focusedLineField === `${line.id}:quantity` ? '' : line.quantity}
                         onChange={(e) => updateLine(line.id, 'quantity', Number(e.target.value))}
-                        disabled={!isEditing}
-                        className="w-20"
+                        onFocus={() => handleQuantityFocus(line.id)}
+                        onBlur={(e) => handleQuantityBlur(line.id, Number(e.target.value))}
+                        className="w-20 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       />
+                    </TableCell>
+                    <TableCell>
+                      <div className="w-24 px-3 py-2 text-sm text-right">
+                        {formatVND(line.unitPrice)}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <Input
                         type="number"
-                        value={line.unitPrice}
-                        onChange={(e) => updateLine(line.id, 'unitPrice', Number(e.target.value))}
-                        disabled={!isEditing}
-                        className="w-24"
-                        step="0.01"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Input
-                        type="number"
-                        value={line.discount}
+                        value={focusedLineField === `${line.id}:discount` ? '' : line.discount}
                         onChange={(e) => updateLine(line.id, 'discount', Number(e.target.value))}
-                        disabled={!isEditing}
-                        className="w-20"
+                        onFocus={() => handleDiscountFocus(line.id)}
+                        onBlur={(e) => handleDiscountBlur(line.id, Number(e.target.value))}
+                        className="w-20 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         min="0"
                         max="100"
                       />
                     </TableCell>
                     <TableCell className="font-medium">
-                      ${line.lineTotal.toFixed(2)}
+                      {formatVND(line.lineTotal)}
                     </TableCell>
                     <TableCell>{line.receivedQty}</TableCell>
                     <TableCell>
@@ -653,16 +885,16 @@ export function PurchaseOrderDetail({ orderId }: PurchaseOrderDetailProps) {
             <div className="w-80 space-y-2">
               <div className="flex justify-between">
                 <span>Subtotal:</span>
-                <span>${lines.reduce((sum, line) => sum + line.lineTotal, 0).toFixed(2)}</span>
+                <span>{formatVND(lines.reduce((sum, line) => sum + line.lineTotal, 0))}</span>
               </div>
               <div className="flex justify-between">
                 <span>Tax (10%):</span>
-                <span>${(lines.reduce((sum, line) => sum + line.lineTotal, 0) * 0.1).toFixed(2)}</span>
+                <span>{formatVND(lines.reduce((sum, line) => sum + line.lineTotal, 0) * 0.1)}</span>
               </div>
               <Separator />
               <div className="flex justify-between font-medium text-lg">
                 <span>Total:</span>
-                <span>${(lines.reduce((sum, line) => sum + line.lineTotal, 0) * 1.1).toFixed(2)}</span>
+                <span>{formatVND(lines.reduce((sum, line) => sum + line.lineTotal, 0) * 1.1)}</span>
               </div>
             </div>
           </div>
