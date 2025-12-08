@@ -1,11 +1,11 @@
 import { useState } from 'react'
-import { X, BarChart3, ShoppingCart, TrendingUp, Package, Users } from 'lucide-react'
+import { X, BarChart3, ShoppingCart, TrendingUp, Package, Users, Truck } from 'lucide-react'
 import { cn } from './ui/utils'
 
 export interface Tab {
   id: string
   title: string
-  component: 'dashboard' | 'purchase-orders' | 'sales-orders' | 'inventory' | 'inventory-on-hand' | 'inventory-transactions' | 'inventory-adjustment' | 'access-distribution' | 'purchase-order' | 'sales-order' | 'items' | 'item' | 'price-books' | 'price-book'
+  component: 'dashboard' | 'purchase-orders' | 'sales-orders' | 'inventory' | 'inventory-on-hand' | 'inventory-transactions' | 'inventory-adjustment' | 'access-distribution' | 'purchase-order' | 'sales-order' | 'items' | 'item' | 'price-books' | 'price-book' | 'logistics' | 'routes' | 'pick-list-by-route' | 'route'
   icon: any
   closable: boolean
   orderId?: string
@@ -118,5 +118,19 @@ export const availableModules = [
     component: 'access-distribution' as const,
     icon: Users,
     requiredRole: 'admin' as const
+  },
+  {
+    id: 'logistics',
+    title: 'Logistics',
+    component: 'logistics' as const,
+    icon: Truck,
+    requiredRole: null
+  },
+  {
+    id: 'routes',
+    title: 'Routes',
+    component: 'routes' as const,
+    icon: Truck,
+    requiredRole: null
   }
 ]

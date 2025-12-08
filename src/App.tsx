@@ -10,12 +10,15 @@ import { Inventory } from './components/Inventory'
 import { AccessDistribution } from './components/AccessDistribution'
 import { PurchaseOrderDetail } from './components/PurchaseOrderDetail'
 import { SalesOrderDetail } from './components/SalesOrderDetail'
+import { PickListByRoute } from './components/PickListByRoute'
 import { Items } from './components/Items'
 import { ItemDetail } from './components/ItemDetail'
 import { PriceBooks } from './components/PriceBooks'
 import { PriceBookDetail } from './components/PriceBookDetail'
+import { Routes } from './components/Routes'
+import { RouteDetail } from './components/RouteDetail'
 import { TabManager, Tab } from './components/TabManager'
-import { User as UserIcon, LogOut, Building2, BarChart3, ShoppingCart, TrendingUp, Package, Users, ChevronDown, ChevronRight, Component, DollarSign } from 'lucide-react'
+import { User as UserIcon, LogOut, Building2, BarChart3, ShoppingCart, TrendingUp, Package, Users, ChevronDown, ChevronRight, DollarSign, Truck } from 'lucide-react'
 
 interface User {
   id: string
@@ -71,6 +74,11 @@ const navigationItems = [
         id: 'sales-order-new',
         label: 'Đơn bán hàng chi tiết',
         component: 'sales-order' as const
+      },
+      {
+        id: 'pick-list-by-route',
+        label: 'Pick List by Route',
+        component: 'pick-list-by-route' as const
       }
     ]
   },
@@ -110,6 +118,18 @@ const navigationItems = [
         id: 'price-book-new',
         label: 'New Price Book',
         component: 'price-book' as const
+      }
+    ]
+  },
+  {
+    id: 'logistics',
+    label: 'Logistics',
+    icon: Truck,
+    subItems: [
+      {
+        id: 'routes-list',
+        label: 'Routes',
+        component: 'routes' as const
       }
     ]
   }
@@ -260,7 +280,7 @@ export default function App() {
     setActiveTabId(newTab.id)
   }
 
-  const handleOpenDetailTab = (type: 'purchase-order' | 'sales-order' | 'item' | 'price-book', id: string) => {
+  const handleOpenDetailTab = (type: 'purchase-order' | 'sales-order' | 'item' | 'price-book' | 'route', id: string) => {
     let title = ''
     let icon = ShoppingCart
 
@@ -280,6 +300,10 @@ export default function App() {
       case 'price-book':
         title = 'Price Book Details'
         icon = DollarSign
+        break
+      case 'route':
+        title = 'Route Details'
+        icon = Truck
         break
     }
 
@@ -330,8 +354,12 @@ export default function App() {
         return <PurchaseOrders onOpenDetail={(orderId) => handleOpenDetailTab('purchase-order', orderId)} />
       case 'sales-orders':
         return <SalesOrders onOpenDetail={(orderId) => handleOpenDetailTab('sales-order', orderId)} />
+      case 'pick-list-by-route':
+        return <PickListByRoute onOpenDetail={(pickListId) => handleOpenDetailTab('sales-order', pickListId)} />
       case 'price-books':
         return <PriceBooks onOpenDetail={(priceBookId) => handleOpenDetailTab('price-book', priceBookId)} />
+      case 'routes':
+        return <Routes onOpenDetail={(routeId) => handleOpenDetailTab('route', routeId)} />
       case 'inventory':
         return <Inventory />
       case 'inventory-on-hand':
@@ -350,6 +378,8 @@ export default function App() {
         return <SalesOrderDetail orderId={activeTab.orderId!} />
       case 'price-book':
         return <PriceBookDetail priceBookId={activeTab.orderId!} />
+      case 'route':
+        return <RouteDetail routeId={activeTab.orderId!} />
       default:
         return <Dashboard />
     }
