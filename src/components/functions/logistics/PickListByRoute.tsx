@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import { Card, CardContent, CardHeader } from './ui/card'
-import { Button } from './ui/button'
-import { Input } from './ui/input'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
+import { Card, CardContent, CardHeader } from '../../ui/card'
+import { Button } from '../../ui/button'
+import { Input } from '../../ui/input'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../ui/table'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select'
 import { Plus, ArrowRight, Printer } from 'lucide-react'
 
 interface PickListItem {

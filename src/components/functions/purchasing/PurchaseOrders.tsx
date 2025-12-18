@@ -1,11 +1,11 @@
 import { useState } from 'react'
-import { Card, CardContent } from './ui/card'
-import { Button } from './ui/button'
-import { Input } from './ui/input'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table'
-import { Badge } from './ui/badge'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
-import { Checkbox } from './ui/checkbox'
+import { Card, CardContent } from '../../ui/card'
+import { Button } from '../../ui/button'
+import { Input } from '../../ui/input'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../ui/table'
+import { Badge } from '../../ui/badge'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select'
+import { Checkbox } from '../../ui/checkbox'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,7 +15,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle
-} from './ui/alert-dialog'
+} from '../../ui/alert-dialog'
 import { Plus, ArrowRight, Trash2, Binoculars } from 'lucide-react'
 
 interface PurchaseOrder {

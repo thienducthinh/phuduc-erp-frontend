@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
-import { Button } from './ui/button'
-import { Input } from './ui/input'
-import { Label } from './ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table'
-import { Badge } from './ui/badge'
-import { Textarea } from './ui/textarea'
-import { Separator } from './ui/separator'
-import { Checkbox } from './ui/checkbox'
+import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card'
+import { Button } from '../../ui/button'
+import { Input } from '../../ui/input'
+import { Label } from '../../ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../ui/table'
+import { Badge } from '../../ui/badge'
+import { Textarea } from '../../ui/textarea'
+import { Separator } from '../../ui/separator'
+import { Checkbox } from '../../ui/checkbox'
 import { Plus, Trash2, Download, Send, ArrowLeft, RefreshCw, Binoculars } from 'lucide-react'
 
 // Reusable filter operator components
@@ -47,7 +47,9 @@ interface PurchaseOrderLine {
 
 interface PurchaseOrderHeader {
   id: string
+  vendorCode: string
   vendor: string
+  vendorName: string
   vendorAddress: string
   orderDate: string
   expectedDate: string
@@ -61,10 +63,47 @@ interface PurchaseOrderHeader {
   total: number
 }
 
+// Vendor Master Data
+interface VendorMaster {
+  vendorCode: string
+  vendor: string
+  vendorName: string
+  vendorAddress: string
+}
+
+const vendorMasterData: Record<string, VendorMaster> = {
+  'VEND001': {
+    vendorCode: 'VEND001',
+    vendor: 'TSI',
+    vendorName: 'Tech Supplies Inc',
+    vendorAddress: '123 Technology Ave, Silicon Valley, CA 94000'
+  },
+  'VEND002': {
+    vendorCode: 'VEND002',
+    vendor: 'GEL',
+    vendorName: 'Global Electronics',
+    vendorAddress: '456 Electronics Blvd, Tech City, NY 10001'
+  },
+  'VEND003': {
+    vendorCode: 'VEND003',
+    vendor: 'ODP',
+    vendorName: 'Office Depot Pro',
+    vendorAddress: '789 Office Park, Business District, CA 90210'
+  },
+  'VEND004': {
+    vendorCode: 'VEND004',
+    vendor: 'IPC',
+    vendorName: 'Industrial Parts Co',
+    vendorAddress: '321 Industrial Way, Manufacturing Zone, TX 75001'
+  }
+}
+
 const mockPOHeaders: Record<string, PurchaseOrderHeader> = {
   'PO-001': {
     id: 'PO-001',
-    vendor: 'Tech Supplies Inc',
+    vendorCode: 'VEND001',
+    vendor: 'TSI',
+    vendorName: 'Tech Supplies Inc',
     vendorAddress: '123 Technology Ave, Silicon Valley, CA 94000',
     orderDate: '2024-01-15',
     expectedDate: '2024-01-30',
@@ -79,7 +118,9 @@ const mockPOHeaders: Record<string, PurchaseOrderHeader> = {
   },
   'PO-002': {
     id: 'PO-002',
-    vendor: 'Global Electronics',
+    vendorCode: 'VEND002',
+    vendor: 'GEL',
+    vendorName: 'Global Electronics',
     vendorAddress: '456 Electronics Blvd, Tech City, NY 10001',
     orderDate: '2024-01-12',
     expectedDate: '2024-01-22',
@@ -94,7 +135,9 @@ const mockPOHeaders: Record<string, PurchaseOrderHeader> = {
   },
   'PO-003': {
     id: 'PO-003',
-    vendor: 'Office Depot Pro',
+    vendorCode: 'VEND003',
+    vendor: 'ODP',
+    vendorName: 'Office Depot Pro',
     vendorAddress: '789 Office Park, Business District, CA 90210',
     orderDate: '2024-01-10',
     expectedDate: '2024-01-20',
@@ -109,7 +152,9 @@ const mockPOHeaders: Record<string, PurchaseOrderHeader> = {
   },
   'PO-004': {
     id: 'PO-004',
-    vendor: 'Industrial Parts Co',
+    vendorCode: 'VEND004',
+    vendor: 'IPC',
+    vendorName: 'Industrial Parts Co',
     vendorAddress: '321 Industrial Way, Manufacturing Zone, TX 75001',
     orderDate: '2024-01-08',
     expectedDate: '2024-01-18',
@@ -131,7 +176,9 @@ const getTodayDate = () => {
 
 const emptyPOHeader: PurchaseOrderHeader = {
   id: '',
+  vendorCode: '',
   vendor: '',
+  vendorName: '',
   vendorAddress: '',
   orderDate: getTodayDate(),
   expectedDate: getTodayDate(),
@@ -280,6 +327,31 @@ export function PurchaseOrderDetail({ orderId }: PurchaseOrderDetailProps) {
     setIsEditing(orderId === 'new')
   }, [orderId])
 
+  const handleVendorCodeChange = (vendorCode: string) => {
+    setHeader({ ...header, vendorCode })
+    
+    // Lookup vendor data from vendorCode
+    const vendorData = vendorMasterData[vendorCode]
+    if (vendorData) {
+      setHeader(prev => ({
+        ...prev,
+        vendorCode: vendorData.vendorCode,
+        vendor: vendorData.vendor,
+        vendorName: vendorData.vendorName,
+        vendorAddress: vendorData.vendorAddress
+      }))
+    } else {
+      // Clear vendor data if code not found
+      setHeader(prev => ({
+        ...prev,
+        vendorCode,
+        vendor: '',
+        vendorName: '',
+        vendorAddress: ''
+      }))
+    }
+  }
+
   const applyFilter = (value: any, filterValue: string, operator: string) => {
     if (!filterValue) return true
     const val = value.toString().toLowerCase()
@@ -397,15 +469,15 @@ export function PurchaseOrderDetail({ orderId }: PurchaseOrderDetailProps) {
   const handleDateInput = (field: 'orderDate' | 'expectedDate', value: string) => {
     // If value is empty, restore the previous value
     if (!value.trim()) {
-      setHeader({...header, [field]: previousDateValues[field]})
+      setHeader({ ...header, [field]: previousDateValues[field] })
       return
     }
 
     const shortcutDate = handleDateShortcut(value)
     if (shortcutDate) {
-      setHeader({...header, [field]: shortcutDate})
+      setHeader({ ...header, [field]: shortcutDate })
     } else {
-      setHeader({...header, [field]: value})
+      setHeader({ ...header, [field]: value })
     }
   }
 
@@ -416,7 +488,7 @@ export function PurchaseOrderDetail({ orderId }: PurchaseOrderDetailProps) {
       [field]: header[field]
     })
     // Clear the field
-    setHeader({...header, [field]: ''})
+    setHeader({ ...header, [field]: '' })
   }
 
   const handleQuantityFocus = (lineId: string) => {
@@ -568,14 +640,31 @@ export function PurchaseOrderDetail({ orderId }: PurchaseOrderDetailProps) {
               <Label htmlFor="orderId">Order ID</Label>
               <Input
                 value={header.id}
-                onChange={(e) => setHeader({...header, id: e.target.value})}
+                onChange={(e) => setHeader({ ...header, id: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="vendorCode">Vendor Code</Label>
+              <Input
+                value={header.vendorCode}
+                onChange={(e) => handleVendorCodeChange(e.target.value)}
+                placeholder="Enter vendor code"
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="vendor">Vendor</Label>
               <Input
                 value={header.vendor}
-                onChange={(e) => setHeader({...header, vendor: e.target.value})}
+                disabled={true}
+                className="bg-gray-50"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="vendorName">Vendor Name</Label>
+              <Input
+                value={header.vendorName}
+                disabled={true}
+                className="bg-gray-50"
               />
             </div>
             <div className="space-y-2">
@@ -583,7 +672,7 @@ export function PurchaseOrderDetail({ orderId }: PurchaseOrderDetailProps) {
               <Input
                 type="text"
                 value={header.orderDate}
-                onChange={(e) => setHeader({...header, orderDate: e.target.value})}
+                onChange={(e) => setHeader({ ...header, orderDate: e.target.value })}
                 onFocus={() => handleDateFocus('orderDate')}
                 onBlur={(e) => handleDateInput('orderDate', e.target.value)}
                 placeholder=""
@@ -594,7 +683,7 @@ export function PurchaseOrderDetail({ orderId }: PurchaseOrderDetailProps) {
               <Input
                 type="text"
                 value={header.expectedDate}
-                onChange={(e) => setHeader({...header, expectedDate: e.target.value})}
+                onChange={(e) => setHeader({ ...header, expectedDate: e.target.value })}
                 onFocus={() => handleDateFocus('expectedDate')}
                 onBlur={(e) => handleDateInput('expectedDate', e.target.value)}
                 placeholder=""
@@ -602,7 +691,7 @@ export function PurchaseOrderDetail({ orderId }: PurchaseOrderDetailProps) {
             </div>
             <div className="space-y-2">
               <Label htmlFor="paymentTerms">Payment Terms</Label>
-              <Select value={header.paymentTerms} onValueChange={(value) => setHeader({...header, paymentTerms: value})} disabled={!isEditing}>
+              <Select value={header.paymentTerms} onValueChange={(value) => setHeader({ ...header, paymentTerms: value })} disabled={!isEditing}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -616,7 +705,7 @@ export function PurchaseOrderDetail({ orderId }: PurchaseOrderDetailProps) {
             </div>
             <div className="space-y-2">
               <Label htmlFor="deliveryTerms">Delivery Terms</Label>
-              <Select value={header.deliveryTerms} onValueChange={(value) => setHeader({...header, deliveryTerms: value})} disabled={!isEditing}>
+              <Select value={header.deliveryTerms} onValueChange={(value) => setHeader({ ...header, deliveryTerms: value })} disabled={!isEditing}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -632,7 +721,7 @@ export function PurchaseOrderDetail({ orderId }: PurchaseOrderDetailProps) {
               <Label htmlFor="vendorAddress">Vendor Address</Label>
               <Textarea
                 value={header.vendorAddress}
-                onChange={(e) => setHeader({...header, vendorAddress: e.target.value})}
+                onChange={(e) => setHeader({ ...header, vendorAddress: e.target.value })}
                 rows={2}
               />
             </div>
@@ -640,7 +729,7 @@ export function PurchaseOrderDetail({ orderId }: PurchaseOrderDetailProps) {
               <Label htmlFor="notes">Notes</Label>
               <Textarea
                 value={header.notes}
-                onChange={(e) => setHeader({...header, notes: e.target.value})}
+                onChange={(e) => setHeader({ ...header, notes: e.target.value })}
                 rows={3}
               />
             </div>
