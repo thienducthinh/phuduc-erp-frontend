@@ -136,7 +136,11 @@ const navigationItems = [
 ]
 
 export default function App() {
-  const [user, setUser] = useState<User | null>(null)
+  const [user, setUser] = useState<User | null>(() => {
+    // Try to restore user from localStorage on initial load
+    const savedUser = localStorage.getItem('user')
+    return savedUser ? JSON.parse(savedUser) : null
+  })
   const [tabs, setTabs] = useState<Tab[]>([])
   const [activeTabId, setActiveTabId] = useState<string>('')
   const [openMenus, setOpenMenus] = useState<Set<string>>(new Set())
@@ -158,12 +162,16 @@ export default function App() {
 
   const handleLogin = (loggedInUser: User) => {
     setUser(loggedInUser)
+    // Persist user to localStorage
+    localStorage.setItem('user', JSON.stringify(loggedInUser))
   }
 
   const handleLogout = () => {
     setUser(null)
     setTabs([])
     setActiveTabId('')
+    // Clear user from localStorage
+    localStorage.removeItem('user')
   }
 
   const handleTabChange = (tabId: string) => {
