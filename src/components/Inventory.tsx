@@ -199,9 +199,9 @@ export function Inventory() {
   const [searchTerm, setSearchTerm] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [isAdjustmentDialogOpen, setIsAdjustmentDialogOpen] = useState(false)
-  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>(mockInventoryItems)
-  const [transactions, setTransactions] = useState<InventoryTransaction[]>(mockTransactions)
-  const [adjustments, setAdjustments] = useState<AdjustmentOrder[]>(mockAdjustments)
+  const [inventoryItems] = useState<InventoryItem[]>(mockInventoryItems)
+  const [transactions] = useState<InventoryTransaction[]>(mockTransactions)
+  const [adjustments] = useState<AdjustmentOrder[]>(mockAdjustments)
 
   const filteredItems = inventoryItems.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -209,20 +209,6 @@ export function Inventory() {
     const matchesCategory = categoryFilter === 'all' || item.category.toLowerCase() === categoryFilter
     return matchesSearch && matchesCategory
   })
-
-  const handleCreateAdjustment = (reason: string, notes: string) => {
-    const newAdjustment: AdjustmentOrder = {
-      id: `ADJ-${String(adjustments.length + 1).padStart(3, '0')}`,
-      date: new Date().toISOString().split('T')[0],
-      reason,
-      status: 'Draft',
-      items: Math.floor(Math.random() * 10) + 1,
-      totalAdjustment: Math.floor(Math.random() * 20) - 10
-    }
-
-    setAdjustments([...adjustments, newAdjustment])
-    setIsAdjustmentDialogOpen(false)
-  }
 
   const getStockStatus = (item: InventoryItem) => {
     if (item.available === 0) return { status: 'Out of Stock', color: 'bg-red-100 text-red-800' }

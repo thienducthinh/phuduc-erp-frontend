@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card'
 import { Button } from '../../ui/button'
 import { Input } from '../../ui/input'
 import { Label } from '../../ui/label'
@@ -124,11 +124,11 @@ interface SalesOrderDetailProps {
   orderId: string
 }
 
-export function SalesOrderDetail({ orderId }: SalesOrderDetailProps) {
+export function SalesOrderDetail({  }: SalesOrderDetailProps) {
   const [header, setHeader] = useState<SalesOrderHeader>(mockSOHeader)
   const [lines, setLines] = useState<SalesOrderLine[]>(mockSOLines)
   const [isEditing, setIsEditing] = useState(false)
-  const [isAddingLine, setIsAddingLine] = useState(false)
+  const [_isAddingLine, setIsAddingLine] = useState(false)
 
   const getStatusColor = (status: string) => {
     switch (status) {

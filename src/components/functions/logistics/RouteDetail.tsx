@@ -7,30 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../ui/table'
 import { Badge } from '../../ui/badge'
 import { Textarea } from '../../ui/textarea'
-import { Separator } from '../../ui/separator'
 import { Checkbox } from '../../ui/checkbox'
-import { Plus, Trash2, Download, Send, ArrowLeft, RefreshCw, Binoculars } from 'lucide-react'
-
-const TextFilterOperators = () => (
-  <SelectContent>
-    <SelectItem value="equals">Equals</SelectItem>
-    <SelectItem value="notEquals">Does Not Equal</SelectItem>
-    <SelectItem value="contains">Contains</SelectItem>
-    <SelectItem value="startsWith">Starts With</SelectItem>
-    <SelectItem value="endsWith">Ends With</SelectItem>
-  </SelectContent>
-)
-
-const NumericFilterOperators = () => (
-  <SelectContent>
-    <SelectItem value="equals">Equals</SelectItem>
-    <SelectItem value="notEquals">Does Not Equal</SelectItem>
-    <SelectItem value="greaterThan">Greater Than</SelectItem>
-    <SelectItem value="greaterThanOrEqual">Greater Than or Equal</SelectItem>
-    <SelectItem value="lessThan">Less Than</SelectItem>
-    <SelectItem value="lessThanOrEqual">Less Than or Equal</SelectItem>
-  </SelectContent>
-)
+import { Plus, Trash2, ArrowLeft } from 'lucide-react'
 
 interface RouteCustomer {
   id: string
@@ -209,7 +187,7 @@ export function RouteDetail({ routeId }: RouteDetailProps) {
     city: '',
     status: 'all'
   })
-  const [filterOperators, setFilterOperators] = useState({
+  const [filterOperators] = useState({
     customerName: 'contains',
     city: 'contains'
   })
@@ -252,10 +230,6 @@ export function RouteDetail({ routeId }: RouteDetailProps) {
 
   const updateFilter = (key: string, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }))
-  }
-
-  const updateOperator = (key: string, operator: string) => {
-    setFilterOperators(prev => ({ ...prev, [key]: operator }))
   }
 
   const handleSelectAll = (checked: boolean) => {
@@ -304,15 +278,6 @@ export function RouteDetail({ routeId }: RouteDetailProps) {
     }
   }
 
-  const getRouteStatusColor = (status: string) => {
-    switch (status) {
-      case 'Active': return 'bg-green-100 text-green-800'
-      case 'Inactive': return 'bg-gray-100 text-gray-800'
-      case 'Paused': return 'bg-yellow-100 text-yellow-800'
-      case 'Archived': return 'bg-red-100 text-red-800'
-      default: return 'bg-gray-100 text-gray-800'
-    }
-  }
 
   return (
     <div className="space-y-6">
@@ -486,11 +451,6 @@ export function RouteDetail({ routeId }: RouteDetailProps) {
                   <TableHead className="py-2"></TableHead>
                   <TableHead className="py-2">
                     <div className="flex gap-1 items-center">
-                      <Select value={filterOperators.customerName} onValueChange={(value) => updateOperator('customerName', value)}>
-                        <SelectTrigger className="h-8 w-8 px-2 bg-white">
-                        </SelectTrigger>
-                        <TextFilterOperators />
-                      </Select>
                       <Input
                         placeholder=""
                         value={filters.customerName}
@@ -502,11 +462,6 @@ export function RouteDetail({ routeId }: RouteDetailProps) {
                   <TableHead className="py-2"></TableHead>
                   <TableHead className="py-2">
                     <div className="flex gap-1 items-center">
-                      <Select value={filterOperators.city} onValueChange={(value) => updateOperator('city', value)}>
-                        <SelectTrigger className="h-8 w-8 px-2 bg-white">
-                        </SelectTrigger>
-                        <TextFilterOperators />
-                      </Select>
                       <Input
                         placeholder=""
                         value={filters.city}

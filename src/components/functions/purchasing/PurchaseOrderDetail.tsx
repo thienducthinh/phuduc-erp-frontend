@@ -9,29 +9,7 @@ import { Badge } from '../../ui/badge'
 import { Textarea } from '../../ui/textarea'
 import { Separator } from '../../ui/separator'
 import { Checkbox } from '../../ui/checkbox'
-import { Plus, Trash2, Download, Send, ArrowLeft, RefreshCw, Binoculars } from 'lucide-react'
-
-// Reusable filter operator components
-const TextFilterOperators = () => (
-  <SelectContent>
-    <SelectItem value="equals">Equals</SelectItem>
-    <SelectItem value="notEquals">Does Not Equal</SelectItem>
-    <SelectItem value="contains">Contains</SelectItem>
-    <SelectItem value="startsWith">Starts With</SelectItem>
-    <SelectItem value="endsWith">Ends With</SelectItem>
-  </SelectContent>
-)
-
-const NumericFilterOperators = () => (
-  <SelectContent>
-    <SelectItem value="equals">Equals</SelectItem>
-    <SelectItem value="notEquals">Does Not Equal</SelectItem>
-    <SelectItem value="greaterThan">Greater Than</SelectItem>
-    <SelectItem value="greaterThanOrEqual">Greater Than or Equal</SelectItem>
-    <SelectItem value="lessThan">Less Than</SelectItem>
-    <SelectItem value="lessThanOrEqual">Less Than or Equal</SelectItem>
-  </SelectContent>
-)
+import { Plus, Trash2 } from 'lucide-react'
 
 interface PurchaseOrderLine {
   id: string
@@ -455,15 +433,16 @@ export function PurchaseOrderDetail({ orderId }: PurchaseOrderDetailProps) {
   const handleDateShortcut = (value: string): string | null => {
     // Handle shortcuts like "+3" for today + 3 days, "-2" for today - 2 days
     const match = value.match(/^([+-])(\d+)$/)
-    if (match) {
-      const [, sign, days] = match
+    if (match && match[1] && match[2]) {
+      const sign = match[1]
+      const days = match[2]
       const today = new Date()
       const offset = parseInt(days) * (sign === '+' ? 1 : -1)
       today.setDate(today.getDate() + offset)
       const dateStr = today.toISOString().split('T')[0]
-      return dateStr || null
+      return dateStr || ''
     }
-    return null
+    return ''
   }
 
   const handleDateInput = (field: 'orderDate' | 'expectedDate', value: string) => {

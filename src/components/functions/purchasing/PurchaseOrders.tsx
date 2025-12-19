@@ -145,11 +145,6 @@ export function PurchaseOrders({ onOpenDetail }: PurchaseOrderDetail) {
     setFilterOperators(prev => ({ ...prev, [key]: operator }))
   }
 
-  const handleStatusChange = (orderId: string, newStatus: PurchaseOrder['status']) => {
-    setPurchaseOrders(purchaseOrders.map(order =>
-      order.id === orderId ? { ...order, status: newStatus } : order
-    ))
-  }
 
   const getStatusColor = (status: string) => {
     switch (status) {

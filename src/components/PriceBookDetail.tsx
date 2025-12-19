@@ -64,8 +64,8 @@ const emptyPriceBook: PriceBookData = {
   name: '',
   description: '',
   currency: 'USD',
-  validFrom: new Date().toISOString().split('T')[0],
-  validTo: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+  validFrom: new Date().toISOString().split('T')[0] || '',
+  validTo: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] || '',
   status: 'Active',
   items: []
 }

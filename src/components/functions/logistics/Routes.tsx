@@ -151,11 +151,6 @@ export function Routes({ onOpenDetail }: RouteDetail) {
     setFilterOperators(prev => ({ ...prev, [key]: operator }))
   }
 
-  const handleStatusChange = (routeId: string, newStatus: Route['status']) => {
-    setRoutes(routes.map(route =>
-      route.id === routeId ? { ...route, status: newStatus } : route
-    ))
-  }
 
   const getStatusColor = (status: string) => {
     switch (status) {

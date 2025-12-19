@@ -8,7 +8,7 @@ import { Switch } from './ui/switch'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog'
 import { Label } from './ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
-import { Plus, Search, Edit, UserPlus, Settings } from 'lucide-react'
+import { Search, Edit, UserPlus, Settings } from 'lucide-react'
 
 interface UserPermission {
   id: string
@@ -127,7 +127,6 @@ export function AccessDistribution() {
   const [roleFilter, setRoleFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
-  const [editingUser, setEditingUser] = useState<UserPermission | null>(null)
   const [users, setUsers] = useState<UserPermission[]>(mockUserPermissions)
 
   const filteredUsers = users.filter(user => {

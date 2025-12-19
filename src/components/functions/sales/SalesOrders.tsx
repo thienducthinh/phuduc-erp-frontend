@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../ui/tabs'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../../ui/dialog'
 import { Label } from '../../ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select'
-import { Plus, Search, ArrowRight } from 'lucide-react'
+import { Plus, ArrowRight } from 'lucide-react'
 
 interface SalesOrder {
   id: string
@@ -89,7 +89,7 @@ interface SalesOrdersProps {
 }
 
 export function SalesOrders({ onOpenDetail }: SalesOrdersProps) {
-  const [searchTerm, setSearchTerm] = useState('')
+  const [searchTerm, _setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [activeTab, setActiveTab] = useState('all')
   const [salesOrders, setSalesOrders] = useState<SalesOrder[]>(mockSalesOrders)
@@ -114,7 +114,7 @@ export function SalesOrders({ onOpenDetail }: SalesOrdersProps) {
     const newSO: SalesOrder = {
       id: `SO-${String(salesOrders.length + 1).padStart(3, '0')}`,
       customer: newOrder.customer,
-      orderDate: new Date().toISOString().split('T')[0],
+      orderDate: new Date().toISOString().split('T')[0] ?? '',
       deliveryDate: newOrder.deliveryDate,
       status: 'Draft',
       type: newOrder.type as 'wholesale' | 'retail',
