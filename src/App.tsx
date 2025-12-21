@@ -13,12 +13,17 @@ import { SalesOrderDetail } from './components/functions/sales/SalesOrderDetail'
 import { PickListByRoute } from './components/functions/logistics/PickListByRoute'
 import { Items } from './components/functions/items/Items'
 import { ItemDetail } from './components/functions/items/ItemDetail'
-import { PriceBooks } from './components/PriceBooks'
-import { PriceBookDetail } from './components/PriceBookDetail'
+import { ItemCategories } from './components/functions/items/ItemCategories'
+import { ItemCategoryDetail } from './components/functions/items/ItemCategoryDetail'
+import { ItemBrands } from './components/functions/items/ItemBrands'
+import { ItemBrandDetail } from './components/functions/items/ItemBrandDetail'
+import { PriceBooks } from './components/functions/price_book/PriceBooks'
+import { PriceBookDetail } from './components/functions/price_book/PriceBookDetail'
 import { Routes } from './components/functions/logistics/Routes'
 import { RouteDetail } from './components/functions/logistics/RouteDetail'
 import { TabManager, Tab } from './components/TabManager'
 import { User as UserIcon, LogOut, Building2, BarChart3, ShoppingCart, TrendingUp, Package, Users, ChevronDown, ChevronRight, DollarSign, Truck } from 'lucide-react'
+import { sub } from 'date-fns'
 
 interface User {
   id: string
@@ -41,7 +46,38 @@ const navigationItems = [
     id: "items",
     label: "Sản phẩm",
     icon: Package,
-    component: 'items' as const
+    subItems: [
+      {
+        id: 'items-list',
+        label: 'Danh sách sản phẩm',
+        component: 'items' as const
+      },
+      {
+        id: 'item-detail',
+        label: 'Sản phẩm chi tiết',
+        component: 'item' as const
+      },
+      {
+        id: 'item-categories',
+        label: 'Danh mục sản phẩm',
+        component: 'item-categories' as const
+      },
+      {        
+        id: 'item-category-detail',
+        label: 'Danh mục sản phẩm chi tiết',
+        component: 'item-category' as const
+      },
+      {
+        id: 'item-brands',
+        label: 'Thương hiệu sản phẩm',
+        component: 'item-brands' as const
+      },
+      {        
+        id: 'item-brand-detail',
+        label: 'Thương hiệu sản phẩm chi tiết',
+        component: 'item-brand' as const
+      }
+    ] 
   },
   {
     id: 'purchase-orders',
@@ -288,7 +324,7 @@ export default function App() {
     setActiveTabId(newTab.id)
   }
 
-  const handleOpenDetailTab = (type: 'purchase-order' | 'sales-order' | 'item' | 'price-book' | 'route', id: string) => {
+  const handleOpenDetailTab = (type: 'purchase-order' | 'sales-order' | 'item' | 'price-book' | 'route' | 'item-category' | 'item-brand', id: string) => {
     let title = ''
     let icon = ShoppingCart
 
@@ -303,6 +339,14 @@ export default function App() {
         break
       case 'item':
         title = 'Item Details'
+        icon = Package
+        break
+      case 'item-category':
+        title = 'Item Category Details'
+        icon = Package
+        break
+      case 'item-brand':
+        title = 'Item Brand Details'
         icon = Package
         break
       case 'price-book':
@@ -358,6 +402,10 @@ export default function App() {
         return <Dashboard />
       case 'items':
         return <Items onOpenDetail={(itemId) => handleOpenDetailTab('item', itemId)} />
+      case 'item-categories':
+        return <ItemCategories onOpenDetail={(categoryId) => handleOpenDetailTab('item-category', categoryId)} />
+      case 'item-brands':
+        return <ItemBrands onOpenDetail={(brandId) => handleOpenDetailTab('item-brand', brandId)} />
       case 'purchase-orders':
         return <PurchaseOrders onOpenDetail={(orderId) => handleOpenDetailTab('purchase-order', orderId)} />
       case 'sales-orders':
@@ -380,6 +428,10 @@ export default function App() {
         return <AccessDistribution />
       case 'item':
         return <ItemDetail itemId={activeTab.orderId!} />
+      case 'item-category':
+        return <ItemCategoryDetail categoryId={activeTab.orderId!} />
+      case 'item-brand':
+        return <ItemBrandDetail brandId={activeTab.orderId!} />
       case 'purchase-order':
         return <PurchaseOrderDetail orderId={activeTab.orderId!} />
       case 'sales-order':
