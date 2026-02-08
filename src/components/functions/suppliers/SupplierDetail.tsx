@@ -74,11 +74,6 @@ const mockSupplierHeaders: Record<string, SupplierHeader> = {
   }
 }
 
-const getTodayDate = () => {
-  const today = new Date().toISOString().split('T')[0]
-  return today || ''
-}
-
 const emptySupplierHeader: SupplierHeader = {
   id: '',
   supplierCode: '',

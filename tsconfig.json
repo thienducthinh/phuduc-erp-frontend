@@ -21,6 +21,9 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": true,
 
+    /* Vite client types */
+    "types": ["vite/client"],
+
     /* Path aliases */
     "baseUrl": ".",
     "paths": {

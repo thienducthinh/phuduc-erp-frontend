@@ -71,11 +71,6 @@ const mockCustomerHeaders: Record<string, CustomerHeader> = {
   }
 }
 
-const getTodayDate = () => {
-  const today = new Date().toISOString().split('T')[0]
-  return today || ''
-}
-
 const emptyCustomerHeader: CustomerHeader = {
   id: '',
   customerCode: '',

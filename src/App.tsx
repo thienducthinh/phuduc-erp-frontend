@@ -27,7 +27,6 @@ import { Suppliers } from './components/functions/suppliers/Suppliers'
 import { SupplierDetail } from './components/functions/suppliers/SupplierDetail'
 import { TabManager, Tab } from './components/TabManager'
 import { User as UserIcon, LogOut, Building2, BarChart3, ShoppingCart, TrendingUp, Package, Users, ChevronDown, ChevronRight, DollarSign, Truck, UserCircle } from 'lucide-react'
-import { sub } from 'date-fns'
 
 interface User {
   id: string
