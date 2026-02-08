@@ -5,7 +5,7 @@ import { cn } from './ui/utils'
 export interface Tab {
   id: string
   title: string
-  component: 'dashboard' | 'purchase-orders' | 'sales-orders' | 'inventory' | 'inventory-on-hand' | 'inventory-transactions' | 'inventory-adjustment' | 'access-distribution' | 'purchase-order' | 'sales-order' | 'items' | 'item' | 'item-categories' | 'item-category' | 'item-brands' | 'item-brand' | 'price-books' | 'price-book' | 'logistics' | 'routes' | 'pick-list-by-route' | 'route'
+  component: 'dashboard' | 'purchase-orders' | 'sales-orders' | 'inventory' | 'inventory-on-hand' | 'inventory-transactions' | 'inventory-adjustment' | 'access-distribution' | 'purchase-order' | 'sales-order' | 'items' | 'item' | 'item-categories' | 'item-category' | 'item-brands' | 'item-brand' | 'price-books' | 'price-book' | 'logistics' | 'routes' | 'pick-list-by-route' | 'route' | 'suppliers' | 'supplier' | 'customers' | 'customer'
   icon: any
   closable: boolean
   orderId?: string

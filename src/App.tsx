@@ -21,8 +21,12 @@ import { PriceBooks } from './components/functions/price_book/PriceBooks'
 import { PriceBookDetail } from './components/functions/price_book/PriceBookDetail'
 import { Routes } from './components/functions/logistics/Routes'
 import { RouteDetail } from './components/functions/logistics/RouteDetail'
+import { Customers } from './components/functions/customers/Customers'
+import { CustomerDetail } from './components/functions/customers/CustomerDetail'
+import { Suppliers } from './components/functions/suppliers/Suppliers'
+import { SupplierDetail } from './components/functions/suppliers/SupplierDetail'
 import { TabManager, Tab } from './components/TabManager'
-import { User as UserIcon, LogOut, Building2, BarChart3, ShoppingCart, TrendingUp, Package, Users, ChevronDown, ChevronRight, DollarSign, Truck } from 'lucide-react'
+import { User as UserIcon, LogOut, Building2, BarChart3, ShoppingCart, TrendingUp, Package, Users, ChevronDown, ChevronRight, DollarSign, Truck, UserCircle } from 'lucide-react'
 import { sub } from 'date-fns'
 
 interface User {
@@ -41,6 +45,40 @@ const navigationItems = [
     label: 'Dashboard',
     icon: BarChart3,
     component: 'dashboard' as const
+  },
+  {
+    id: 'suppliers',
+    label: 'Suppliers',
+    icon: UserCircle,
+    subItems: [
+      {
+        id: 'suppliers-list',
+        label: 'Supplier List',
+        component: 'suppliers' as const
+      },
+      {
+        id: 'supplier-detail',
+        label: 'Supplier Detail',
+        component: 'supplier' as const
+      }
+    ]
+  },
+  {
+    id: 'customers',
+    label: 'Customers',
+    icon: UserCircle,
+    subItems: [
+      {
+        id: 'customers-list',
+        label: 'Customer List',
+        component: 'customers' as const
+      },
+      {
+        id: 'customer-detail',
+        label: 'Customer Detail',
+        component: 'customer' as const
+      }
+    ]
   },
   {
     id: "items",
@@ -166,6 +204,11 @@ const navigationItems = [
         id: 'routes-list',
         label: 'Routes',
         component: 'routes' as const
+      },
+      {
+        id: 'route-detail',
+        label: 'Route Detail',
+        component: 'route' as const
       }
     ]
   }
@@ -265,7 +308,7 @@ export default function App() {
       let title = label || ''
       let orderId: string | undefined = undefined
 
-      if (component === 'purchase-order' || component === 'sales-order' || component === 'item' || component === 'price-book') {
+      if (component === 'purchase-order' || component === 'sales-order' || component === 'item' || component === 'price-book' || component === 'supplier' || component === 'customer') {
         orderId = 'new'
       }
 
@@ -286,7 +329,7 @@ export default function App() {
         id: `tab-${tabIdCounter++}`,
         title,
         component: component as any,
-        icon: icon || (component === 'purchase-order' ? ShoppingCart : component === 'sales-order' ? TrendingUp : component === 'price-book' ? DollarSign : Package),
+        icon: icon || (component === 'purchase-order' ? ShoppingCart : component === 'sales-order' ? TrendingUp : component === 'price-book' ? DollarSign : component === 'supplier' || component === 'customer' ? UserCircle : Package),
         closable: true,
         ...(orderId && { orderId })
       }
@@ -324,7 +367,7 @@ export default function App() {
     setActiveTabId(newTab.id)
   }
 
-  const handleOpenDetailTab = (type: 'purchase-order' | 'sales-order' | 'item' | 'price-book' | 'route' | 'item-category' | 'item-brand', id: string) => {
+  const handleOpenDetailTab = (type: 'purchase-order' | 'sales-order' | 'item' | 'price-book' | 'route' | 'item-category' | 'item-brand' | 'supplier' | 'customer', id: string) => {
     let title = ''
     let icon = ShoppingCart
 
@@ -356,6 +399,14 @@ export default function App() {
       case 'route':
         title = 'Route Details'
         icon = Truck
+        break
+      case 'supplier':
+        title = 'Supplier Details'
+        icon = UserCircle
+        break
+      case 'customer':
+        title = 'Customer Details'
+        icon = UserCircle
         break
     }
 
@@ -440,6 +491,14 @@ export default function App() {
         return <PriceBookDetail priceBookId={activeTab.orderId!} />
       case 'route':
         return <RouteDetail routeId={activeTab.orderId!} />
+      case 'suppliers':
+        return <Suppliers onOpenDetail={(supplierId) => handleOpenDetailTab('supplier', supplierId)} />
+      case 'supplier':
+        return <SupplierDetail supplierId={activeTab.orderId!} />
+      case 'customers':
+        return <Customers onOpenDetail={(customerId) => handleOpenDetailTab('customer', customerId)} />
+      case 'customer':
+        return <CustomerDetail customerId={activeTab.orderId!} />
       default:
         return <Dashboard />
     }
