@@ -25,6 +25,7 @@
     "types": ["vite/client"],
 
     /* Path aliases */
+    "ignoreDeprecations": "6.0",
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]

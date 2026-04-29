@@ -10,6 +10,7 @@ import { Inventory } from './components/Inventory'
 import { AccessDistribution } from './components/AccessDistribution'
 import { PurchaseOrderDetail } from './components/functions/purchasing/PurchaseOrderDetail'
 import { SalesOrderDetail } from './components/functions/sales/SalesOrderDetail'
+import { SalesOrderbyRoute } from './components/functions/sales/SalesOrderbyRoute'
 import { PickListByRoute } from './components/functions/logistics/PickListByRoute'
 import { Items } from './components/functions/items/Items'
 import { ItemDetail } from './components/functions/items/ItemDetail'
@@ -26,7 +27,7 @@ import { CustomerDetail } from './components/functions/customers/CustomerDetail'
 import { Suppliers } from './components/functions/suppliers/Suppliers'
 import { SupplierDetail } from './components/functions/suppliers/SupplierDetail'
 import { TabManager, Tab } from './components/TabManager'
-import { User as UserIcon, LogOut, Building2, BarChart3, ShoppingCart, TrendingUp, Package, Users, ChevronDown, ChevronRight, DollarSign, Truck, UserCircle } from 'lucide-react'
+import { User as UserIcon, LogOut, BarChart3, ShoppingCart, TrendingUp, Package, Users, ChevronDown, ChevronRight, DollarSign, Truck, UserCircle } from 'lucide-react'
 
 interface User {
   id: string
@@ -147,6 +148,11 @@ const navigationItems = [
         id: 'sales-order-new',
         label: 'Đơn bán hàng chi tiết',
         component: 'sales-order' as const
+      },
+      {
+        id: 'sales-order-by-route',
+        label: 'Đơn bán hàng bởi Tuyến',
+        component: 'sales-order-by-route' as const
       },
       {
         id: 'pick-list-by-route',
@@ -460,6 +466,8 @@ export default function App() {
         return <PurchaseOrders onOpenDetail={(orderId) => handleOpenDetailTab('purchase-order', orderId)} />
       case 'sales-orders':
         return <SalesOrders onOpenDetail={(orderId) => handleOpenDetailTab('sales-order', orderId)} />
+      case 'sales-order-by-route':
+        return <SalesOrderbyRoute />
       case 'pick-list-by-route':
         return <PickListByRoute onOpenDetail={(pickListId) => handleOpenDetailTab('sales-order', pickListId)} />
       case 'price-books':
@@ -514,7 +522,7 @@ export default function App() {
         <Sidebar collapsible="none">
           <SidebarHeader className="border-b px-6 py-4">
             <div className="flex items-center gap-3">
-              <Building2 className="w-6 h-6 text-blue-600" />
+              <img src="/logo.jpg" alt="Phú Đức Logo" className="w-6 h-6" />
               <h2 className="text-lg">Phú Đức</h2>
             </div>
           </SidebarHeader>
@@ -584,6 +592,7 @@ export default function App() {
             {/* Header */}
             <header className="flex items-center justify-between px-6 py-3 bg-blue-600 text-white border-b">
               <div className="flex items-center gap-4">
+                <img src="/logo.jpg" alt="Logo" className="w-6 h-6" />
                 <h1 className="text-lg">ERP System</h1>
               </div>
               <div className="flex items-center gap-4">
